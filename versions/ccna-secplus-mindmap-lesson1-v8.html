@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>CCNA×Security+ 知識地圖 — Lesson 1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1512;
+    --panel: #16201b;
+    --panel-border: #24352c;
+    --text: #e7f0ea;
+    --text-dim: #9db3a6;
+    --accent: #4CAF50;
+    --accent-soft: #2e4a33;
+    --related: #a78bfa;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+  #app { display: flex; height: 100vh; }
+  #cy { flex: 1; height: 100vh; background: var(--bg); min-width: 0; }
+
+  #sidebar {
+    display: none;
+    flex: 0 0 auto;
+    max-width: 40vw;
+    min-width: 300px;
+    background: var(--panel);
+    border-left: 1px solid var(--panel-border);
+    padding: 20px;
+    overflow-y: auto;
+    flex-direction: column;
+    gap: 14px;
+  }
+  #sidebar.visible { display: flex; }
+
+  #topbar { position: absolute; top: 14px; left: 14px; z-index: 10; display: flex; gap: 8px; align-items: center; }
+  #search { background: var(--panel); border: 1px solid var(--panel-border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; width: 220px; }
+  #search:focus { outline: 1px solid var(--accent); }
+
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 100px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); letter-spacing: 0.02em; width: fit-content; }
+  h2#nodeTitle { margin: 0; font-size: 18px; line-height: 1.4; white-space: pre-line; }
+  #nodeMeta { font-size: 12px; color: var(--text-dim); }
+  #nodeContent { font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; color: #d7e4dc; }
+  .dict-term {
+    background: rgba(196, 160, 255, 0.28);
+    border-radius: 3px;
+    padding: 0 1px;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  .dict-term:hover { background: rgba(196, 160, 255, 0.55); }
+  #dictPopup {
+    position: fixed;
+    max-width: 300px;
+    background: #1c2620;
+    border: 1px solid #8fd39a;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #e7f0ea;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    z-index: 999;
+    display: none;
+  }
+
+  .table-scroll { overflow-x: auto; max-width: 100%; }
+  table.mdtable { border-collapse: collapse; font-size: 12.5px; margin-top: 4px; }
+  table.mdtable th, table.mdtable td { border: 1px solid var(--panel-border); padding: 6px 10px; text-align: left; vertical-align: top; white-space: nowrap; }
+  table.mdtable th { background: var(--accent-soft); color: var(--accent); }
+
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 6px; margin-top: 4px; }
+  .rel-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rel-btn { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); font-size: 12px; padding: 5px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .rel-btn.related-btn { background: #2c2440; border-color: var(--related); color: var(--related); }
+  .rel-btn:hover { filter: brightness(1.2); }
+
+  .icon-btn {
+    background: var(--panel); border: 1px solid var(--panel-border); color: var(--text);
+    width: 34px; height: 34px; border-radius: 8px; font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { border-color: var(--accent); }
+  .icon-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  #editBanner {
+    display: none; font-size: 11px; color: var(--accent); background: var(--accent-soft);
+    border: 1px solid var(--accent); border-radius: 6px; padding: 4px 10px; width: fit-content;
+  }
+  #editBanner.visible { display: block; }
+  #cy.editing { box-shadow: inset 0 0 0 3px var(--accent); }
+
+  .field-label { font-size: 11px; color: var(--text-dim); margin-bottom: 3px; display: block; }
+  .edit-input {
+    width: 100%; background: #0f1512; border: 1px solid var(--panel-border); color: var(--text);
+    padding: 7px 9px; border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .edit-input:focus { outline: 1px solid var(--accent); }
+  textarea.edit-input { resize: vertical; min-height: 54px; line-height: 1.5; }
+  .edit-row { display: flex; gap: 10px; align-items: flex-end; }
+  .edit-row > div { flex: 1; }
+  input[type="color"].edit-input { padding: 3px; height: 38px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div style="flex:1; position:relative; min-width:0;">
+    <div id="topbar">
+      <button class="icon-btn" id="lockBtn" title="切換編輯模式">🔒</button>
+      <button class="icon-btn" id="exportBtn" title="匯出變更 JSON" disabled>⬇</button>
+      <input id="search" placeholder="搜尋節點關鍵字..." />
+      <span style="font-size:11px; color:var(--text-dim);">WASD 平移畫面　·　Ctrl+Z 復原</span>
+    </div>
+    <div id="cy"></div>
+    <div id="dictPopup"></div>
+  </div>
+  <div id="sidebar">
+    <span id="editBanner">✎ 編輯模式：修改會即時套用到畫面上，記得最後按匯出</span>
+    <span class="badge" id="nodeBadge"></span>
+    <h2 id="nodeTitle"></h2>
+    <div id="nodeMeta"></div>
+    <div id="nodeContent"></div>
+    <div class="table-scroll" id="tableWrap"></div>
+
+    <div id="editPanel" style="display:none; flex-direction:column; gap:12px;">
+      <div>
+        <span class="field-label">名稱 Label（英文 → 中文 →（括號），換行分隔）</span>
+        <textarea class="edit-input" id="editLabel" rows="3"></textarea>
+      </div>
+      <div>
+        <span class="field-label">內文 Content</span>
+        <textarea class="edit-input" id="editContent" rows="5"></textarea>
+      </div>
+      <div class="edit-row">
+        <div>
+          <span class="field-label">形狀 Shape</span>
+          <select class="edit-input" id="editShape"></select>
+        </div>
+        <div>
+          <span class="field-label">顏色 Color</span>
+          <input class="edit-input" type="color" id="editColor" />
+        </div>
+        <div>
+          <span class="field-label">大小 Size</span>
+          <input class="edit-input" type="number" id="editSize" min="10" max="200" />
+        </div>
+      </div>
+    </div>
+
+    <div id="edgeEditPanel" style="display:none; flex-direction:column; gap:12px;">
+      <div class="section-label">線段設定 Edge</div>
+      <div class="edit-row">
+        <div>
+          <span class="field-label">curve-style</span>
+          <select class="edit-input" id="edgeCurveStyle">
+            <option value="bezier">bezier</option>
+            <option value="straight">straight</option>
+            <option value="unbundled-bezier">unbundled-bezier</option>
+            <option value="taxi">taxi</option>
+            <option value="round-taxi">round-taxi</option>
+            <option value="segments">segments</option>
+            <option value="haystack">haystack</option>
+          </select>
+        </div>
+        <div>
+          <span class="field-label">line-style</span>
+          <select class="edit-input" id="edgeLineStyle">
+            <option value="solid">solid</option>
+            <option value="dashed">dashed</option>
+            <option value="dotted">dotted</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div>
+          <span class="field-label">width</span>
+          <input class="edit-input" type="number" id="edgeWidth" min="0.5" max="20" step="0.5" />
+        </div>
+        <div>
+          <span class="field-label">line-color</span>
+          <input class="edit-input" type="color" id="edgeColor" />
+        </div>
+      </div>
+      <div>
+        <span class="field-label">label（線上文字）</span>
+        <input class="edit-input" type="text" id="edgeLabel" />
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); cursor:pointer;">
+        <input type="checkbox" id="edgeSyncColor" style="width:auto;" />
+        與 parent node 同步顏色（節點改色時線段自動跟著變，手動改線段顏色會自動取消勾選）
+      </label>
+    </div>
+
+    <div id="parentSection" style="display:none;">
+      <div class="section-label">上層節點 Parent</div>
+      <div class="rel-btns" id="parentBtns"></div>
+    </div>
+    <div id="childrenSection" style="display:none;">
+      <div class="section-label">下層節點 Children</div>
+      <div class="rel-btns" id="childrenBtns"></div>
+    </div>
+    <div id="relSection" style="display:none;">
+      <div class="section-label">跨段落關聯 Related</div>
+      <div class="rel-btns" id="relBtns"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const GRAPH_DATA = [{"id": "l1-iaaa-accounting", "label": "Accounting\n可問責/稽核", "content": "記錄使用者存取資源和執行動作的過程，以便監控、追蹤和稽核。「有留下紀錄嗎？」", "table": "", "source": "p.18", "flow": 4, "parent": "l1-iaaa", "related": ["l1-nonrepud-vs-accountability"], "x": 1755.3, "y": 775.7, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-infosec", "label": "Information Security\n資訊安全", "content": "資訊安全的核心屬性通常稱為 CIA Triad：\n機密性、完整性、可用性。\n另外還有不可否認性(Non-repudiation)與真實性(Authenticity)兩個延伸屬性。", "table": "", "source": "p.5,7", "flow": null, "parent": "l1-topic1a", "related": [], "x": 828.4, "y": 472.4, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-integrity", "l1-nonrepudiation", "l1-availability", "l1-authenticity", "l1-dad", "l1-confidentiality"]}, {"id": "l1-roles-executive", "label": "Executive Roles\n高階主管與資安總舵手\n（CEO/CISO/CIO）", "content": "高階主管(CEO/總經理)：負最終決策責任，核准資安預算與整體政策。\n資安長(CISO)：組織資安總舵手，制定整體資安戰略、風險評估，監控網路威脅。\n資訊長(CIO)：負責資訊系統架構與營運，確保技術發展符合資安標準。", "table": "", "source": "p.44", "flow": null, "parent": "l1-roles", "related": [], "x": 2769.8, "y": 659.1, "size": 40, "color": "#B39DDB", "shape": "round-rectangle", "children": []}, {"id": "l1-iaaa-authentication", "label": "Authentication\n驗證", "content": "證明主體在嘗試存取資源時確實是其聲稱的身份。例如：帳密登入、生物特徵、MFA。「證明給我看」", "table": "", "source": "p.18", "flow": 2, "parent": "l1-iaaa", "related": [], "x": 1610.6, "y": 778.3, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-iaaa-authorization", "label": "Authorization\n授權", "content": "確定主體對每種資源應擁有哪些權利，並執行這些權利。例如：管理者 vs 一般使用者。「你能做什麼？」", "table": "", "source": "p.18", "flow": 3, "parent": "l1-iaaa", "related": [], "x": 1683.6, "y": 778.3, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-preventive", "label": "Preventive\n預防性控制", "content": "從源頭阻止安全問題發生，目標是阻止威脅發生、消除或降低攻擊成功可能性，屬於主動防禦第一道防線。", "table": "範例：防火牆(技術)、帳號密碼/MFA(技術)、門禁系統(實體)、資料加密(技術)、安全意識訓練(管理)", "source": "p.33", "flow": 1, "parent": "l1-sc-functypes", "related": [], "x": 2226.5, "y": 669.4, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-nistcsf", "label": "NIST CSF\n五大核心功能", "content": "NIST制定的CSF涵蓋五個核心功能，\n依序為：識別→保護→檢測→回應→恢復，彼此間有回饋迴圈。", "table": "", "source": "p.12", "flow": null, "parent": "l1-csf", "related": [], "x": 1207.8, "y": 586.3, "size": 44, "color": "#9E9E9E", "shape": "ellipse", "children": ["l1-nist-respond", "l1-nist-detect", "l1-nist-identify", "l1-nist-protect", "l1-nist-recover"]}, {"id": "l1-sc-directive", "label": "Directive\n指令性控制", "content": "透過政策、規範、程序引導行為，屬於管理層面控制手段，告訴人員「應該做什麼」或「不能做什麼」，違反者通常面臨紀律處分。", "table": "範例：可接受使用政策、密碼政策、資料分類政策、保密協議(NDA)、社群媒體使用規範", "source": "p.39", "flow": null, "parent": "l1-sc-functypes", "related": [], "x": 2643.6, "y": 665.5, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-integrity", "label": "Integrity\n完整性", "content": "確保被使用的資料為正確資料，任何修改都必須經過授權。\n威脅：資料竄改、程式碼注入、密碼分析攻擊。\n防範：密碼學、Checksum、訊息摘要、數位簽章。", "table": "", "source": "p.8", "flow": null, "parent": "l1-infosec", "related": [], "x": 704.5, "y": 773.3, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-detective", "label": "Detective\n偵測性控制", "content": "能識別潛在安全漏洞以便進一步調查，可能不會阻止存取，但會識別並記錄任何企圖或成功的入侵，提供攻擊的可見性。", "table": "範例：IDS入侵偵測系統、監視攝影機CCTV、SIEM安全資訊事件管理、異常登入告警、系統日誌審查", "source": "p.34", "flow": 2, "parent": "l1-sc-functypes", "related": ["l1-competencies"], "x": 2287.2, "y": 669.2, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-managerial", "label": "Managerial\n管理控制", "content": "著重規劃、政策制定、風險管理，由高層管理人員主導，確保安全目標與組織目標一致。\n提供對整個系統的監督與治理，屬於政策與程序層面的控制。", "table": "範例：資訊安全政策（制定公司整體資安政策文件）、風險評估（定期進行風險評估與管理）、安全稽核（定期稽核系統安全合規性）、業務連續性計畫（制定災難復原計畫）", "source": "p.28", "flow": null, "parent": "l1-sc-categories", "related": [], "x": 2024.8, "y": 667.1, "size": 40, "color": "#2196F3", "shape": "triangle", "children": []}, {"id": "l1-nist-respond", "label": "Respond\n回應", "content": "識別、分析、遏制和消除對系統和數據安全的威脅。", "table": "", "source": "p.12", "flow": 4, "parent": "l1-nistcsf", "related": [], "x": 1272.8, "y": 777.6, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-soc", "label": "SOC\n安全運營中心\nSecurity Operations Center", "content": "安全專業人員監控和保護其他業務功能（財務、運營、銷售等）關鍵資訊資產的位置，專門用於監控、分析及緩解網路威脅的設施。\n負責收集並彙整來自不同環境（地端、雲端、混合雲）的安全訊息，以識別和回應潛在安全事件。\n由於難以建立、維護和融資，通常受僱於大公司，如政府機構或醫療保健公司。", "table": "", "source": "p.48-49", "flow": null, "parent": "l1-bizunits", "related": [], "x": 3154, "y": 656.5, "size": 40, "color": "#B39DDB", "shape": "round-rectangle", "children": []}, {"id": "l1-nist-detect", "label": "Detect\n檢測", "content": "執行持續、主動的監控，確保控制措施有效並能抵禦新型威脅。", "table": "", "source": "p.12", "flow": 3, "parent": "l1-nistcsf", "related": [], "x": 1207.8, "y": 776.3, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-nonrepudiation", "label": "Non-repudiation\n不可否認性", "content": "主體不能否認做過某事，例如創建、修改或發送資源。例如遺囑等法律文件簽署時通常需要見證人。\n常見技術手段：數位簽章、非對稱加密、時間戳記。", "table": "", "source": "p.7,19", "flow": null, "parent": "l1-infosec", "related": ["l1-nonrepud-vs-accountability"], "x": 983, "y": 774.6, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-seccontrols", "label": "Security Controls\n安全控制", "content": "為保護組織的資料、系統與資產，用來「預防、偵測、抵禦或最小化」資安風險所實施的各種保障措施與對策（政策、流程、軟硬體功能）。\n\n依實施類型分四種：管理、操作、技術、實體。\n依功能分六種：預防、偵測、矯正、指令、嚇阻、補償。", "table": "", "source": "p.26", "flow": null, "parent": "l1-topic1b", "related": [], "x": 2180.2, "y": 482.5, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-sc-functypes", "l1-sc-categories"]}, {"id": "l1-devsecops", "label": "DevSecOps\n（開發+安全+運營）", "content": "將安全性完全整合至軟體開發(Dev)與營運(Ops)生命週期(SDLC)中的實務與文化。\n強調「資安左移(Shift Left)」，在開發初期就進行安全測試與合規掃描，大幅降低後期修復漏洞的成本與風險。\n核心原則：自動化整合(CI/CD嵌入自動化防護)、共同分擔的文化(打破開發/資安/營運的穀倉效應)。", "table": "SDLC流程：需求分析→軟體設計→軟體開發→測試和上線→維護與更新", "source": "p.50-51", "flow": null, "parent": "l1-bizunits", "related": [], "x": 3269.3, "y": 656.5, "size": 40, "color": "#B39DDB", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-ransomware-example", "label": "Ransomware Defense Example\n三種功能類型範例：勒索軟體防禦", "content": "預防：系統加固(System Hardening)從源頭防止感染。\n偵測：透過EDR(端點防護告警軟體)偵測勒索軟體並發出警報。\n校正：若已感染，需靠備份(一種恢復手段)復原資料。", "table": "", "source": "p.36", "flow": null, "parent": "l1-sc-functypes", "related": [], "x": 2401, "y": 778.1, "size": 34, "color": "#f82a2a", "shape": "round-rectangle", "children": []}, {"id": "l1-availability", "label": "Availability\n可用性", "content": "確保資訊服務隨時可用，無法使用資訊等於沒有資訊。\n威脅：DDoS攻擊、應用程式和元件故障。\n防範：入侵防禦/偵測系統、修補程式管理、冗餘機制。", "table": "", "source": "p.8", "flow": null, "parent": "l1-infosec", "related": [], "x": 769.6, "y": 772, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-nist-identify", "label": "Identify\n識別", "content": "制定安全政策和能力。評估風險、威脅和漏洞，並推薦安全控制措施以減輕它們。", "table": "", "source": "p.12", "flow": 1, "parent": "l1-nistcsf", "related": [], "x": 1071.1, "y": 778.9, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-deterrent", "label": "Deterrent\n嚇阻性控制", "content": "透過威嚇讓攻擊者降低或打消攻擊慾望，可能不會在實體或技術上阻止存取，但會在心理上阻止攻擊者嘗試入侵。與預防控制的差異：嚇阻靠心理，預防靠技術/實體阻擋。", "table": "範例：警告標語、監視攝影機(外顯)、安全警衛巡邏、警告燈號/警報系統標示、法律告示", "source": "p.40", "flow": null, "parent": "l1-sc-functypes", "related": [], "x": 2576.9, "y": 666.5, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-bizunits", "label": "Information Security Business Units (BU)\n資訊安全事業部", "content": "組織可能設立專責的資安業務單位來管理複雜的安全需求，例如SOC、DevSecOps、Incident Response(CIRT)。", "table": "", "source": "p.48", "flow": null, "parent": "l1-topic1b", "related": [], "x": 3264, "y": 466.5, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-soc", "l1-devsecops", "l1-incidentresponse-bu"]}, {"id": "l1-sc-functypes", "label": "Security Control Functional Types\n安全控制功能類型\n（六種）", "content": "依時機與目的分為六種：\n預防(攻擊前)\n偵測(攻擊中)\n校正(攻擊後)\n指令(規範行為)\n嚇阻(心理威嚇)\n補償(替代方案)。\n前三者依攻擊時間軸排列，後三者是額外功能類型。\n\nDeterrent 與 Preventive 容易混淆——Deterrent 靠心理威嚇，Preventive 靠實際阻擋；而Compensating\n是在合規要求無法直接達成時才使用的彈性機制。", "table": "", "source": "p.32,38,42", "flow": null, "parent": "l1-seccontrols", "related": [], "x": 2347, "y": 546.7, "size": 44, "color": "#9E9E9E", "shape": "ellipse", "children": ["l1-sc-preventive", "l1-sc-directive", "l1-sc-detective", "l1-sc-ransomware-example", "l1-sc-deterrent", "l1-sc-compensating", "l1-sc-corrective"]}, {"id": "l1-csf", "label": "Cybersecurity Framework\n網路安全框架", "content": "一套標準化的方針、最佳實務與指南，協助組織建立、管理及強化網路安全防護能力。因為完美防禦不存在，資安本質上是風險管理決策，CSF提供通用語言評估安全成熟度。全球最廣泛採用標準為NIST CSF。\n其他資安框架：\n1. ISO/IEC 27001\n2. CIS Controls\n3. MITRE ATT&CK", "table": "| 框架 | 說明 |\n|---|---|\n| NIST CSF | 全球最廣泛採用 |\n| ISO/IEC 27001 | 全球公認ISMS標準，著重全面資安管理流程與認證 |\n| CIS Controls | CIS提出，18項關鍵安全防護清單 |\n| MITRE ATT&CK | 基於真實觀察的攻擊手法知識庫 |", "source": "p.10-11", "flow": null, "parent": "l1-topic1a", "related": [], "x": 1207.8, "y": 455.8, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-nistcsf"]}, {"id": "l1-authenticity", "label": "Authenticity\n真實性", "content": "第五個資安屬性。當文件執行的正確性有爭議時，證人可提供證據證明其正確性。", "table": "", "source": "p.7", "flow": null, "parent": "l1-infosec", "related": [], "x": 907.4, "y": 773.3, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-operational", "label": "Operational\n操作控制", "content": "主要由人而非系統實施，圍繞日常活動和流程的執行展開，依賴人員來執行與實施。", "table": "範例：安全意識訓練（定期資安教育訓練）、實體巡邏（保全人員定期巡視機房）、事件回應程序（人員依SOP處理資安事件）、文件銷毀程序（依規定銷毀機密文件）", "source": "p.29", "flow": null, "parent": "l1-sc-categories", "related": [], "x": 2024.9, "y": 744.8, "size": 40, "color": "#2196F3", "shape": "barrel", "children": []}, {"id": "l1-topic1b", "label": "Topic 1B\nSecurity Controls", "content": "涵蓋安全控制措施的分類方式(管理/操作/技術/實體)、六種功能類型、資安角色職責、職能與業務單位。", "table": "", "source": "p.25", "flow": null, "parent": "l1-root", "related": [], "x": 2923.6, "y": 293, "size": 75, "color": "#FFFFFF", "shape": "round-hexagon", "children": ["l1-seccontrols", "l1-bizunits", "l1-roles", "l1-competencies"]}, {"id": "l1-dad", "label": "DAD\n（CIA三要素的對立面）", "content": "揭露(Disclosure)：未經授權的存取，對應機密性(Confidentiality)。\n更改(Alteration)：未經授權的變更資料，對應完整性(Integrity)。\n毀滅(Destruction)：資料或系統故障導致無法存取，對應可用性(Availability)。", "table": "", "source": "p.9", "flow": null, "parent": "l1-infosec", "related": [], "x": 828.4, "y": 899, "size": 40, "color": "#F44336", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-technical", "label": "Technical\n技術控制", "content": "以系統（硬體、軟體或韌體）形式實施，也可描述為邏輯控制。最大程度降低組織技術系統的漏洞。", "table": "範例：安裝防火牆、多因素驗證、防毒軟體、資料加密", "source": "p.30", "flow": null, "parent": "l1-sc-categories", "related": [], "x": 2058, "y": 818, "size": 40, "color": "#2196F3", "shape": "rhomboid", "children": []}, {"id": "l1-root", "label": "Lesson 1\n資安基礎概念", "content": "課程總覽：涵蓋資安核心概念（CIA Triad 等）與安全控制措施分類、資安角色與職能。", "table": "", "source": "SY0-701 Lesson1 p.1-2", "flow": null, "parent": null, "related": [], "x": 2049.1, "y": -5.3, "size": 100, "color": "#FFEB3B", "shape": "hexagon", "children": ["l1-topic1b", "l1-topic1a"]}, {"id": "l1-roles-nontech", "label": "Manager vs Technical vs Non-technical Roles\n經理／技術人員／非技術人員的職責分工", "content": "經理可能對某個領域(domain)負責，例如建築控制、網站服務或稽核。\n技術和專家人員(如ISSO)負責實施、維護和監控政策。\n非技術人員負責遵守政策和相關法規。", "table": "", "source": "p.45", "flow": null, "parent": "l1-roles", "related": [], "x": 2924.8, "y": 656.5, "size": 40, "color": "#B39DDB", "shape": "round-rectangle", "children": []}, {"id": "l1-accesscontrol", "label": "Access Control\n存取控制", "content": "控制主體(Subject)如何與客體(Object)互動的過程。\n主體可以是人、設備、軟體程序或其他系統；\n客體是被存取的資源，如網路、伺服器、資料庫、應用程式或檔案。\n決定誰(Who)可以存取什麼資源(What)、在什麼條件下(How)進行存取。", "table": "| 元素 | 說明 | 範例 |\n|---|---|---|\n| 主體 Subject | 發出存取請求的實體 | 使用者、程式、服務 |\n| 客體 Object | 被存取的目標資源 | 檔案、資料庫、網路 |\n| 政策 Policy | 決定是否允許存取的規則 | 角色權限、存取清單 |", "source": "p.15-17", "flow": null, "parent": "l1-topic1a", "related": ["l1-competencies"], "x": 1648.3, "y": 465.7, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-iaaa", "l1-nonrepud-vs-accountability"]}, {"id": "l1-sc-physical", "label": "Physical\n實體控制", "content": "採用各種機制（鑰匙卡、生物識別、密碼）來規範和限制對設施內特定區域的存取，重點在保護組織的有形資產、設施和資源。", "table": "範例：門禁卡/生物辨識、監視攝影機(CCTV)、機架鎖、圍籬/保全閘門、防竄改貼紙", "source": "p.31", "flow": null, "parent": "l1-sc-categories", "related": [], "x": 1996.8, "y": 818, "size": 40, "color": "#2196F3", "shape": "right-rhomboid", "children": []}, {"id": "l1-incidentresponse-bu", "label": "Incident Response\n事件回應\n（CIRT）", "content": "專門的網路事件回應團隊(CIRT)，作為通知安全事件的單點聯繫人，此功能可能由SOC處理，也可能建立為獨立業務單位。\n核心任務為在駭客入侵或系統異常時迅速止血、控制災情，並協助企業從事故中安全復原。", "table": "IR生命週期：Preparation → Detection & Analysis → Containment/Eradication & Recovery → Post-Incident Activity（並回饋至 Detection & Analysis / Preparation）", "source": "p.52", "flow": null, "parent": "l1-bizunits", "related": [], "x": 3385.9, "y": 653.8, "size": 40, "color": "#B39DDB", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-compensating", "label": "Compensating\n補償性控制", "content": "作為主要控制的替代品，用於無法直接滿足某項安全要求時的替代方案，提供相同或更好的保護級別，但使用不同方法或技術，常見於合規框架中。", "table": "| 情境 | 原始控制 | 補償控制 |\n|---|---|---|\n| 舊型醫療設備無法加密 | 資料加密 | 網路隔離+嚴格存取控制 |\n| 工控系統無法安裝防毒 | 防毒軟體 | 應用程式白名單+網路分段 |\n| 系統要求MFA但系統不支援 | 多因素驗證 | 強化監控+限制存取IP範圍 |\n| 老舊系統無法定期更新 | 定期安全更新 | 額外防火牆規則+加強監控 |", "source": "p.41", "flow": null, "parent": "l1-sc-functypes", "related": [], "x": 2506.3, "y": 665.9, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-categories", "label": "Security Control Categories\n安全控制分類\n（依實施類型）", "content": "四種類型：管理控制、操作控制、技術控制、實體控制，形成一個由上而下的金字塔（管理在最上層提供監督）。", "table": "", "source": "p.27", "flow": null, "parent": "l1-seccontrols", "related": [], "x": 2024.3, "y": 549.6, "size": 44, "color": "#9E9E9E", "shape": "ellipse", "children": ["l1-sc-managerial", "l1-sc-operational", "l1-sc-technical", "l1-sc-physical"]}, {"id": "l1-iaaa-identification", "label": "Identification\n身分識別", "content": "建立唯一代表網路上的使用者、裝置或程序的帳戶或ID。「你是誰？」", "table": "", "source": "p.18", "flow": 1, "parent": "l1-iaaa", "related": [], "x": 1544.3, "y": 777, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-confidentiality", "label": "Confidentiality\n機密性", "content": "確保資料不得被未經授權之個人、實體或程序取得或揭露。\n威脅：密碼分析、社交工程、鍵盤記錄器、物聯網漏洞。\n防範：加密、安全傳輸協定、強密碼、存取控制。", "table": "", "source": "p.8", "flow": null, "parent": "l1-infosec", "related": [], "x": 631.6, "y": 772, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-sc-corrective", "label": "Corrective\n校正性控制", "content": "用於修復已發生的安全性問題，目標是消除或減少入侵事件的影響並恢復正常，包含事件回應、修補漏洞、系統還原。", "table": "範例：備份還原、安全補丁、事件回應計畫(IRP)、隔離受感染系統、事後檢討", "source": "p.35", "flow": 3, "parent": "l1-sc-functypes", "related": ["l1-incidentresponse-bu"], "x": 2347, "y": 670.9, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-iaaa", "label": "IAAA\n存取控制的核心\n（身分與存取管理 IAM）", "content": "現代存取控制通常作為身分和存取管理(IAM)系統實現，包括四個依序流程：\n識別→驗證→授權→可問責，因英文字首皆為A（除Identification外），也稱AAA或IAAA原則。\n\n範例（進辦公室）：\n1.識別：保全問名字 \n2.驗證：刷卡+臉部辨識 \n3.授權：只能進7樓 \n4.稽核：門禁系統記錄10:32刷進7樓。", "table": "", "source": "p.18,20", "flow": null, "parent": "l1-accesscontrol", "related": [], "x": 1647.1, "y": 585.7, "size": 44, "color": "#9E9E9E", "shape": "ellipse", "children": ["l1-iaaa-accounting", "l1-iaaa-authentication", "l1-iaaa-authorization", "l1-iaaa-identification"]}, {"id": "l1-roles", "label": "Information Security Roles and Responsibilities\n資訊安全角色和職責", "content": "資訊安全需仰賴跨部門集體參與，從高階主管到一般員工皆有對應責任，落實縱深防禦。\n角色包含整體責任(CIO/CSO/CISO)、管理層、技術層(ISSO)、非技術人員，以及應有的注意/責任(Due care/liability)。\n\n安全責任主要由董事或所有者承擔，但所有員工都分擔一定程度的責任——資安是同體同仁的責任。", "table": "", "source": "p.43-45", "flow": null, "parent": "l1-topic1b", "related": [], "x": 2842, "y": 467.8, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": ["l1-roles-executive", "l1-roles-nontech"]}, {"id": "l1-nist-protect", "label": "Protect\n保護", "content": "採購/開發、安裝、運營和退役IT硬體軟體資產，將安全作為運營生命週期每階段的嵌入式要求。", "table": "", "source": "p.12", "flow": 2, "parent": "l1-nistcsf", "related": [], "x": 1141.4, "y": 778.9, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-nist-recover", "label": "Recover\n恢復", "content": "如果其他控制措施無法阻止攻擊，實施網路安全彈性以恢復系統和數據。", "table": "", "source": "p.12", "flow": 5, "parent": "l1-nistcsf", "related": [], "x": 1337.9, "y": 777.6, "size": 40, "color": "#2196F3", "shape": "round-rectangle", "children": []}, {"id": "l1-topic1a", "label": "Topic 1A\nSecurity Concepts", "content": "涵蓋資安三要素(CIA Triad)、資安框架、差異分析與存取控制。", "table": "", "source": "p.3-4", "flow": null, "parent": "l1-root", "related": [], "x": 1292.5, "y": 286.3, "size": 75, "color": "#FFFFFF", "shape": "round-hexagon", "children": ["l1-infosec", "l1-csf", "l1-accesscontrol", "l1-gapanalysis"]}, {"id": "l1-gapanalysis", "label": "Gap Analysis\n差異分析", "content": "評估工具，用來比對企業的「資安現況」與「框架標準」之間的落差，以利後續改善。\n企業通常先挑選適合的Cyber security Framework作為評估基準，再透過Gap Analysis檢視自身不足。\n", "table": "範例（節錄）：\n| Function | Controls(Actual/Required) | Target Remediation |\n|---|---|---|\n| Identify(10/16) | Asset Management(4/6) | Q4 |\n| Identify(10/16) | Governance(3/4) | Q3 |\n| Identify(10/16) | Risk Assessment(3/6) | Q3 |\n| Protect(8/16) | Identity and Access Management(5/8) | Q1 |\n| Protect(8/16) | Data Security(3/8) | Q1 |", "source": "p.13-14", "flow": null, "parent": "l1-topic1a", "related": ["l1-sc-managerial"], "x": 1374.3, "y": 455.1, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": []}, {"id": "l1-competencies", "label": "Information Security Competencies\n資訊安全職能", "content": "承擔安全責任的IT專業人員須勝任從網路和應用程式設計到採購和HR的廣泛學科，\n典型活動包括：\n風險評估與測試、指定/採購/安裝/配置安全設備軟體、存取控制與用戶權限、稽核日誌與事件、事件回應與報告、業務連續性與災難恢復、安全培訓與教育計畫。\n企業或機構常藉此評估員工能力、制定招募標準或規劃培訓藍圖。", "table": "", "source": "p.46-47", "flow": null, "parent": "l1-topic1b", "related": ["l1-accesscontrol", "l1-sc-detective", "l1-incidentresponse-bu", "l1-sc-managerial", "l1-sc-operational"], "x": 3012.3, "y": 466.5, "size": 58, "color": "#D3D3D3", "shape": "diamond", "children": []}, {"id": "l1-nonrepud-vs-accountability", "label": "Non-repudiation vs Accountability\n不可否認性 vs 可問責性（比較）", "content": "不可否認性是「證據確鑿，無法賴帳」的技術機制；\n可問責性是「追究責任」的權責歸屬原則。", "table": "| 比較維度 | 不可否認性 | 可問責性 |\n|---|---|---|\n| 核心定義 | 確保發送/接收方無法否認曾執行某操作 | 確保每個實體的行為都能唯一追溯 |\n| 關注重點 | 行為的證據與證明力 | 行為的追蹤與究責 |\n| 常見技術手段 | 數位簽章、非對稱加密、時間戳記 | 系統日誌、身分驗證、存取控制 |\n| 舉例 | 自然人憑證簽署公文 | 系統日誌記錄帳號刪除資料庫的行為 |\n| 目的 | 防止抵賴，確保交易法律效力 | 維護系統安全、明確責任歸屬 |", "source": "p.19", "flow": null, "parent": "l1-accesscontrol", "related": ["l1-nonrepudiation", "l1-iaaa-accounting"], "x": 1772.4, "y": 516, "size": 44, "color": "#b28676", "shape": "round-pentagon", "children": []}]
+;
+const DICTIONARY = [{"t": "degaussing", "d": "透過消除驅動器的磁荷使存儲驅動器無法運行且其數據無法恢復的過程。"}, {"t": "OT", "d": "旨在實現工業控制系統而非數據網路的通訊網路。"}, {"t": "ARP poisoning", "d": "一種基於網路的攻擊,其中存取目標本地網段的攻擊者將IP地址重定向到不是預期接收者的電腦的MAC地址。這可用於執行各種攻擊,包括DoS、欺騙和中間人。"}, {"t": "checksum", "d": "哈希函數的輸出。"}, {"t": "CYOD", "d": "企業移動設備配置模型,在該模型中,員工可以選擇用於工作和私人使用的企業設備。"}, {"t": "STIX", "d": "用於分析網路安全事件的框架。"}, {"t": "PaaS", "d": "一種利用雲提供任何平台類型服務的計算方法。"}, {"t": "PEM", "d": "Base64 編碼方案,用於將憑證和密鑰數據存儲為 ASCII 文本。"}, {"t": "state table", "d": "狀態防火牆收集的有關主機之間會話的訊息。"}, {"t": "OTA", "d": "透過蜂窩數據連接提供的韌體更新。"}, {"t": "tcpdump command", "d": "指令行封包探索實用程序。"}, {"t": "shellcode", "d": "輕量級惡意代碼區塊,利用軟體漏洞獲得對受害者係統的初始存取權限。"}, {"t": "physical control", "d": "一種安全控制,用於防止親自入侵企圖。"}, {"t": "race condition", "d": "當執行過程的結果直接依賴於某些事件的順序和時間時的軟體漏洞。"}, {"t": "SLA", "d": "服務合同的操作程序和標準。"}, {"t": "P12", "d": "允許私鑰連同其數位憑證一起導出的格式。"}, {"t": "continuous delivery", "d": "經常測試和驗證應用程序和平台要求以立即可用的軟體開發方法。"}, {"t": "NAC", "d": "收集的協定、策略和硬體的通用術語,用於設備級別驗證和授權對網路的存取"}, {"t": "tape", "d": "磁帶介質提供強大、高速、大容量的備份存儲。"}, {"t": "obfuscation", "d": "隱藏或偽裝代碼或其他訊息的技術,使未經授權的用戶更難閱讀。"}, {"t": "white team", "d": "管理、評估和監督滲透測試或事件回應練習的人員。"}, {"t": "host-based firewall", "d": "在單個主機上運行的軟體應用程序,旨在僅保護該主機。"}, {"t": "IdP", "d": "在聯合網路中,持有用戶帳戶並執行身份驗證的服務。"}, {"t": "STP", "d": "一種交換協定,透過根據需要動態禁用鏈接來防止網路環路。"}, {"t": "normalization", "d": "將通用一致格式應用於傳入數據的例行程,以便可以安全地處理它。"}, {"t": "MAC", "d": "資源受系統定義規則保護的存取控制模型。"}, {"t": "DAC", "d": "存取控制模型,每個資源都受資源所有者管理的存取控制列表(ACL)保護。"}, {"t": "hashing", "d": "將任意長度的字符串輸入轉換為固定長度的字符串輸出的函數。也稱為訊息摘要。"}, {"t": "risk avoidance", "d": "在風險緩解中,停止存在風險的活動的做法。"}, {"t": "loop protection", "d": "防止廣播流量在網路中不斷循環導致網路崩潰的機制。"}, {"t": "diversity", "d": "網路安全彈性策略,透過提供多種類型的控制、技術、供應商和加密實現。"}, {"t": "session hijacking", "d": "一種欺騙攻擊,攻擊者斷開主機連接,然後用他自己的機器替換它,欺騙原始主機的IP 地址。"}, {"t": "GPO", "d": "在Windows 域上,一種部署每用戶和每台電腦設置(例如密碼策略、賬戶限制、防火牆狀態等)的方法。"}, {"t": "CASB", "d": "企業管理軟體,旨在調解用戶在所有類型的設備上對雲服務的存取。"}, {"t": "APT", "d": "攻擊者獲取、維護和多樣化存取網路系統的能力漏洞利用和惡意軟體。"}, {"t": "Python", "d": "廣泛用於自動化的進階編程語言。"}, {"t": "IPS", "d": "一種可以主動攜截攻擊的IDS。"}, {"t": "screened host", "d": "雙宿主代理/網關伺服器,用於為其他網路節點提供互聯網存取,同時保護它們免受外部攻擊。"}, {"t": "LDAP injection", "d": "一種應用程序攻擊,透過製造通常由用戶輸入創建的 LDAP 語句來針對基於 Web 的應用程序。"}, {"t": "data processor", "d": "在隱私法規中,受信任的個人數據副本代表數據收集者執行存儲和/或分析的實體。"}, {"t": "behavioral analysis", "d": "檢測正常運行數據序列變化並識別異常序列的網路監控系統。也稱為基於行為的檢測。"}, {"t": "RBAC", "d": "一種存取控制模型,其中資源由管理員管理的 ACL保護,並根據工作職能提供用戶權限。"}, {"t": "mandatory vacations", "d": "規定員工必須在何時和多長時間下班,以便他們的活動受到安全審查的原則。"}, {"t": "DH", "d": "一種提供安全密鑰交換的加密技術。"}, {"t": "confidentiality", "d": "保持訊息和通訊私密並保護它們免受未經授權的存取的基本安全目標。"}, {"t": "Trojan", "d": "隱藏在看似無害的軟體中的惡意軟體程序。"}, {"t": "data breach", "d": "未經授權讀取、複製或更改機密或私人數據。數據洩露事件可能有通報要求"}, {"t": "TOTP", "d": "對HOTP的改進,強制一次性密碼在短時間內過期。"}, {"t": "MDM", "d": "用於跟蹤、控制和保護組織移動基礎設施的過程和支持技術。"}, {"t": "EAP-TTLS", "d": "一種EAP方法,使客戶端和伺服器無需強制客戶端憑證即可建立安全連接。"}, {"t": "zero-day", "d": "開發者無法匹配的軟體漏洞或利用此類漏洞的攻擊。"}, {"t": "CIS", "d": "一個非營利組織(部分由 SANS 創立)。它發布了著名的“20大關鍵安全控制”(或系統設計建議)。"}, {"t": "EF", "d": "在風險計算中,資產價值在安全事件或災難情景中損失的百分比。"}, {"t": "carving", "d": "當數據沒有關聯的檔案系統元數據時,從電腦中提取數據的過程。"}, {"t": "virus", "d": "設計用於在啟用時感染電腦檔案(或磁盤)的代碼。"}, {"t": "least privilege", "d": "一項基本的安全原則,規定應為某物分配履行其職責所需的最低限度的權利、特權或訊息。"}, {"t": "dumpster diving", "d": "一種社會工程技術,根據組織(或個人)丟棄的東西來發現它。"}, {"t": "sniper", "d": "為滲透測試報告和證據收集而設計的軟體實用程序。"}, {"t": "east-west traffic", "d": "設計範式說明伺服器之間的數據中心流量大於進出流量(南北向)。"}, {"t": "SIM", "d": "一種小型芯片卡,透過國際移動訂戶身份識別設備的用戶和電話號碼。"}, {"t": "execution control", "d": "確定哪些附加軟體可以安裝在客戶端或伺服器上超出其基線的過程, 以防止使用未經授權的軟體。"}, {"t": "SSTP", "d": "透過HTTP over SSL 協定,使用SSTP 標頭封裝 PPP 與IP 封包。"}, {"t": "TOCTTOU", "d": "當應用程序檢查資源和使用資源發生變化時發生的潛在漏洞。"}, {"t": "NFV", "d": "透過虛擬機和容器配置虛擬網路設備,例如交換機、路由器和防火牆。"}, {"t": "PPTP", "d": "由 Cisco 和 Microsoft 開發,用於支持基於PPP和TCP/IP的 VPN。"}, {"t": "GCM", "d": "一種為每個區塊提供訊息真實性的區塊鏈加密模式。"}, {"t": "XOR", "d": "處理兩個變量的布爾運算符,如果其中一個但不是兩個變量的值都為1,則其值為1。"}, {"t": "gait analysis", "d": "基於運動模式識別主體的生物識別機制。"}, {"t": "sflow", "d": "使用採樣記錄網路流量統計的Web 標準。"}, {"t": "authentication", "d": "啟用EAPoL 並將請求者的身份驗證數據傳遞到身份驗證伺服器(例如 RADIUS 伺服器)的PNAC交換機或路由器。"}, {"t": "OAuth", "d": "聯合身份管理的標準,允許資源伺服器或消費者站點使用在單獨的身份提供者上創建和管理的用戶帳戶。"}, {"t": "lightweight cryptography", "d": "具有減少計算要求的密碼算法,適用於資源受限的環境,例如電池供電的設備。"}, {"t": "TKIP", "d": "與有缺陷的 WEP 標準相比,WPA第一版中使用的一種機制,用於提高無線加密機制的安全性。"}, {"t": "vulnerability assessment", "d": "根據系統的配置狀態評估系統的安全性和滿足合規性要求的能力。"}, {"t": "multi-cloud", "d": "雲消費者使用多個公共雲服務的雲部署模型。"}, {"t": "PEAP", "d": "EAP實現,使用伺服器端憑證創建安全隧道進行用戶身份驗證。"}, {"t": "XML injection", "d": "將惡意XML 作為輸入傳遞以利用目標應用程序中的漏洞的攻擊方法。"}, {"t": "asymmetric algorithm", "d": "使用公鑰和私鑰的密碼。使用 Rivel、Shamir Adleman (RSA)或橢圓曲線密碼學(ECC)算法,這些密鑰在數學上是相關聯的,但私鑰不能從公共密鑰中導出。例如,非對稱密鑰無法反轉其執行的操作,因此公鑰無法解密其加密的內容。也稱為慣圓曲線密碼術或 ECC。"}, {"t": "secure boot", "d": "一種UEFI 功能,可防止在啟動操作期間執行不需要的進程。"}, {"t": "TACACS+", "d": "由 Cisco 開發的AAA協定,通常用於驗證管理員帳戶以進行網路設備管理。"}, {"t": "ISO/IEC 31K", "d": "一套全面的企業風險管理標準。"}, {"t": "pointer dereferencing", "d": "當代碼嘗試讀取由指針指定的內存位置但內存位置為空時可能發生的軟體漏洞。"}, {"t": "PowerShell", "d": "基於.NET Framework 構建的指令外壳和腳本語言。"}, {"t": "CCMP", "d": "用於解決WEP 漏洞的 WLAN 加密協定"}, {"t": "UEBA", "d": "一種可以自動識別用戶帳戶和電腦主機的可疑活動的系統。"}, {"t": "load balancer", "d": "一種交換機或路由器,用於在不同資源之間分配客戶端請求。"}, {"t": "Autopsy", "d": "Sleuth Kit 是用於磁盤映像和檔案分析的指令行和編程庫的開源集合。屍檢是這些工具的圖形前端,還提供案例管理/工作流程工具。也稱為偵探套件。"}, {"t": "whaling", "d": "一種基於電子郵件或基於網路的網路釣魚形式,針對進階管理人員或富人。"}, {"t": "SAS", "d": "由並行 SCSI 發展而來,SAS 代表了目前性能最高的硬盤接口。"}, {"t": "vault", "d": "一個安全的房間,有牆壁和強化的闸道,可以抵御實體攻擊。"}, {"t": "incremental backup", "d": "一種備份類型,其中備份自上次完整備份或增量備份(以最近者為準)以來已更改的所有選定檔案。"}, {"t": "clustering", "d": "一種負載平衡技術,將一組伺服器配置為一個單元並協同工作以提供網路服務"}, {"t": "DNSSEC", "d": "一種提供 DNS 數據身份驗證並維護 DNS 數據完整性的安全協定。"}, {"t": "bluesnarfing", "d": "一種無線攻擊,攻擊者可以使用藍牙連接存取設備上的未經授權訊息。"}, {"t": "risk register", "d": "以易於理解的格式突顯風險評估結果的檔案。"}, {"t": "P7B", "d": "用於傳輸數位憑證鏈的檔案格式,使用PKCS#7。"}, {"t": "HMAC", "d": "一種用於透過將訊息的加密散列與密鑰相結合來驗證訊息的完整性和真實性的方法。"}, {"t": "cloud service model", "d": "將雲服務的提供和雲服務提供者的責任範圍劃分為軟體、平台、 基礎設施等。"}, {"t": "FDE", "d": "磁盤上所有數據(包括系統檔案、臨時檔案和頁面檔案)的加密,可以透過支持的操作系統、第三方軟體或磁盤設備本身在控制器級別完成。"}, {"t": "API", "d": "一個編程實用程序庫,例如,用於使軟體開發人員能夠在特定操作系統下存取 TCP/IP 網路堆棧的功能。"}, {"t": "buffer overflow", "d": "數據越過目標緩衝區邊界並開始破壞相鄰內存的攻擊。這可以讓攻擊者使系統崩潰或執行任意代碼。"}, {"t": "DRP", "d": "檔案化和資源豐富的計劃,顯示用於回應關鍵事件的行動和責任。"}, {"t": "application aware firewall", "d": "一種第7層防火牆技術,用於在OSI 模型的應用層檢查封包。"}, {"t": "IPSec", "d": "一組開放的非專有標準,用於在數據透過網路或互聯網傳輸時透過身份驗證和加密來保護數據。"}, {"t": "dictionary attack", "d": "一種密碼攻擊,將加密密碼與預定的可能密碼值列表進行比較。"}, {"t": "SSH", "d": "一個遠程管理和檔案複製程序,透過使用端口轉發支持 VPN 使用TCP端口 22。"}, {"t": "agile model", "d": "一種軟體開發模型,專注於迭代和增量開發,以解決不斷變化的需求和期望"}, {"t": "WPS", "d": "WPA和WPA2的一項功能,允許基於8位PIN碼註冊無線網路。"}, {"t": "AIS", "d": "由 DHS 運營的威脅情報數據饋送。"}, {"t": "zero trust", "d": "任何請求在被允許之前都必須經過身份驗證的安全設計範例。"}, {"t": "EAP", "d": "協商框架,使系統能夠使用基於硬體的身份驗證方法,用於身份驗證的標識符,例如指紋掃描儀或智能卡讀卡器。"}, {"t": "narrow-band", "d": "旨在提供數據的低功率蜂窩網路與物聯網設備的連接。"}, {"t": "Intranet", "d": "只有組織自己的人員才能存取的專用網路。"}, {"t": "directory service", "d": "存儲有關特定網路中所有對象(包括用戶、組、伺服器、客戶端電腦和打印機)的身份訊息的網路服務。"}, {"t": "MAM", "d": "企業管理功能,可以控制移動設備和其他端點的應用程序和存儲。"}, {"t": "DNAT", "d": "NAT 服務,其中私有內部地址映射到一個或多個公共地址,以促進本地網路上的主機透過路由器進行互聯網連接。"}, {"t": "DNS poisoning", "d": "一種基於網路的攻擊,攻擊者利用傳統開放的DNS 系統的本質將域名重定向到攻擊者選擇的IP 地址。"}, {"t": "PIV card", "d": "符合FIPS 201 標準的智能卡,具有防篡改功能。"}, {"t": "memory leak", "d": "當軟體在使用完畢後未釋放分配的內存時可能發生的軟體漏洞。"}, {"t": "CA", "d": "透過為其頒發簽名數位憑證包裝來保證主體身份的伺服器公鑰。"}, {"t": "MSSP", "d": "第三方提供安全配置和監控作為外包服務。"}, {"t": "server-side", "d": "在Web 應用程序中,作為在伺服器上運行的腳本或進程的一部分執行或驗證的輸入數據。"}, {"t": "third-party risks", "d": "因與供應商和客戶的業務關係中的依賴關係而產生的漏洞。"}, {"t": "zero-fill", "d": "一種透過將所有位設置為零來清理驅動器的方法。"}, {"t": "rootkit", "d": "一類惡意軟體,通常在內核級別修改系統檔案以隱藏其存在。"}, {"t": "COBO", "d": "企業移動設備供應模型,其中設備是組織的財產,禁止個人使用。"}, {"t": "collision", "d": "在密碼學中,兩個不同的明文輸入的行為會產生相同的精確密文輸出。"}, {"t": "MitM attack", "d": "一種竊聽形式,攻擊者在兩個受害者之間建立独立連接並竊取訊息以進行欺詐性使用。"}, {"t": "FAR", "d": "生物特徵評估指標,用於衡量被錯誤允許存取的未經授權用戶的數量。"}, {"t": "LLR", "d": "對事件的分析,深入了解如何在未來改進回應流程。也稱為事後報告或AAR。"}, {"t": "directory traversal", "d": "允許存取指令、檔案和目錄的應用程序攻擊,這些指令、檔案和目錄可能是也可能不是連接到 web 文檔根目錄。"}, {"t": "SCAP", "d": "一個NIST 框架,概述了用於自動化漏洞掃描的各種公認實踐。"}, {"t": "risk mitigation", "d": "降低風險以適應組織風險偏好的回應。"}, {"t": "rule-based access control", "d": "一種非自主存取控制技術,它基於一組操作規則或限制來強制執行最低權限權限策略。"}, {"t": "SOAP", "d": "一種基於XML 的Web 服務協定,用於交換訊息。"}, {"t": "lateral movement", "d": "攻擊者能夠從計算環境的一個部分移動到另一個部分的過程。"}, {"t": "DoS", "d": "影響已採資源可用性的任何類型的實體、應用程序或網路攻擊。"}, {"t": "bluejacking", "d": "使用藍牙連接發送未經請求的訊息或圖片訊息。"}, {"t": "privilege access management", "d": "使用身份驗證和授權機制為管理員提供對用戶和組基於角色的權限管理的集中或分散控制。"}, {"t": "circuit-level stateful inspection firewall", "d": "一種第5層防火牆技術,可跟踪連接的活動狀態,並可以根據與連接狀態相關的網路流量内容做出決策。"}, {"t": "SSAE SOC", "d": "審核規範旨在確保雲/托管服務提供商符合專業標準。"}, {"t": "jump server", "d": "提供對其他主機的存取的強化伺服器。也稱為跳箱。"}, {"t": "digital signature", "d": "使用發送者的私鑰加密的訊息摘要,附加到訊息中以驗證發送者並證明訊息的完整性。"}, {"t": "CBC", "d": "一種加密操作模式,其中異或 (XOR)應用於第一個明文區塊。"}, {"t": "deception/disruption", "d": "網路安全彈性工具和技術,可增加威脅行為者的攻擊計劃成本。"}, {"t": "MTD", "d": "企業無法運營而不會導致不可撃回的業務失敗的最長時間。"}, {"t": "full backup", "d": "備份所有選定檔案的備份類型,無論之前的狀態如何。"}, {"t": "crossover error rate", "d": "表示FAR 和FRR 相遇點的生物特徵評估因子,值越低性能越好"}, {"t": "availability", "d": "確保電腦系統連續運行和授權的基本安全目標人們可以存取所需要的數據。"}, {"t": "first responder", "d": "第一個到達事件現場的有經驗的人或團隊。"}, {"t": "SHA", "d": "一種加密散列算法,旨在解決MD5中可能存在的弱點。當前版本是 SHA-2。"}, {"t": "code of conduct", "d": "職業行為取決於基本的道德標準,例如誠實和公平。一些行業已經制定了道德守則以涵蓋困難的情況;一些企業還制定了道德準則來傳達員工實踐的價值觀(倫理)。"}, {"t": "mirroring", "d": "一種使用兩個硬盤的 RAID,提供保護單個磁盤免受故障的最簡單方法。"}, {"t": "passive scan", "d": "柚舉或漏洞掃描,僅分析截獲的網路流量,而不是向目標發送探測。"}, {"t": "steganography", "d": "一種隱藏訊息存在的技術,通常透過在檔案或其他實體中嵌入訊息。"}, {"t": "WEP", "d": "一種用於加密透過無線連接發送的數據的傳統機制。"}, {"t": "continuous monitoring", "d": "持續評估環境變化的技術,以便更快地檢測到新風險並改進業務運營。也稱為持續安全監控或CSM。"}, {"t": "PII", "d": "可用於識別或聯繫個人的數據。"}, {"t": "worm", "d": "一種在系統內存中複製的惡意軟體,可以透過網路連接傳播而不是感染檔案。"}, {"t": "TPM", "d": "硬體存儲數位憑證、密鑰、散列密碼以及其他用戶和平台標識訊息的規範。"}, {"t": "OICD", "d": "一個身份驗證層,位於 OAuth 2.0 授權協定之上。"}, {"t": "CTI", "d": "調查、收集、分析和傳播有關新興威脅和威脅源的訊息的過程。也稱為威脅情報"}, {"t": "code reuse", "d": "使用最初為不同內容編寫的代碼的潛在不安全編程實踐。"}, {"t": "salt", "d": "一種安全對策,透過向每個明文輸入添加隨機值來減輕彩虹表攻擊的影響。"}, {"t": "MTTR", "d": "設備或組件被修復、更換或以其他方式從故障中恢復所需的平均時間。"}, {"t": "context-aware authentication", "d": "一種存取控制方案,它根據各種環境因素(如時間、位置和行為)驗證對象的身份。"}, {"t": "self-signed certificate", "d": "由頒發它的實體而非CA簽署的數位憑證。"}, {"t": "XSS", "d": "托管在攻擊者站點上或編碼在註入到受信任站點的鏈接中的惡意腳本。"}, {"t": "BAS", "d": "有助於集中配置和監控辦公室和數據中心的機械和系統的組件和協議。"}, {"t": "data minimization", "d": "在數據保護中,只有必要和足夠的個人訊息才能被收集和處理用於所述目的的原則。"}, {"t": "pseudo-anonymization", "d": "從數據集中刪除個人訊息會使個人識別變得困難。"}, {"t": "PAM", "d": "用於在 Linux 中實現身份驗證提供程序的框架。"}, {"t": "timeline", "d": "在數位取證中,一種以圖形格式顯示源圖像中檔案系統事件序列的工具。"}, {"t": "CRL", "d": "在到期日期之前被吚銷的憑證列表。"}, {"t": "SCADA", "d": "一種工業控制系統,用於管理分佈在地理範圍內的大規模、多站點設備和設備。"}, {"t": "Jamming", "d": "無線電波破壞 802.11 無線信號的攻擊。"}, {"t": "CVSS", "d": "一種風險管理方法,用於量化漏洞數據,然後考慮不同類型系統或訊息的風險程度。"}, {"t": "logger command", "d": "將數據寫入系統日誌的 Linux 實用程序。"}, {"t": "CHAP", "d": "為撥號網路開發的身份驗證方案,使用加密的三向握手向伺服器驗證客戶端。挑戰回應在整個連接中重複(儘管對用戶是透明的)以防止重放攻擊。"}, {"t": "fake telemetry", "d": "返回欺騙數據以回應網路探測的欺騙策略。"}, {"t": "AP", "d": "在無線設備之間提供連接並可以連接到有線網路的設備,也稱為無線接入點或 WAP。"}, {"t": "heat map", "d": "在Wi-Fi 站點調查中,顯示不同位置信號強度的圖表。"}, {"t": "privilege escalation", "d": "利用操作系統或其他應用程序中的缺陷來獲得比用戶或應用程序預期更高階別的存取權限的做法。"}, {"t": "HSM", "d": "用於生成和存儲加密密鑰的設備。"}, {"t": "SSO", "d": "一種身份驗證技術,使用戶能夠進行一次身份驗證並接收多個服務的授權。"}, {"t": "implicit deny", "d": "一種基本的安全原則,規定除非已明確授予存取權限,否則應拒絕存取。"}, {"t": "grep command", "d": "用於搜索和過濾輸入的Linux 指令。"}, {"t": "output encoding", "d": "用於清理從用戶輸入創建的輸出的編碼方法。"}, {"t": "tail command", "d": "用於顯示檔案最後幾行的Linux 實用程序。"}, {"t": "ZigBee", "d": "主要用於家庭自動化的低功耗無線通訊開源協定。"}, {"t": "DPO", "d": "負責合規收集和處理個人和敏感數據的機構數據治理角色。"}, {"t": "scanless", "d": "透過第三方網站運行端口掃描以逃避檢測的實用程序。"}, {"t": "RAT", "d": "創建後門遠程管理通道,以允許威脅參與者存取和控制受感染的主機。"}, {"t": "smart card", "d": "類似於信用卡的設備,可在嵌入式微芯片上存儲身份驗證訊息。"}, {"t": "PDU", "d": "提供過濾輸出電壓的進階條形插座。"}, {"t": "CSR", "d": "主體發送給CA 以獲取憑證的 Base64 ASCII 檔案。"}, {"t": "SE", "d": "一種使用ATA指令集清理驅動器的方法。"}, {"t": "segment", "d": "網路的一部分,所有連接的主機都可以在其中自由地相互通訊。"}, {"t": "EAPOL", "d": "一種基於端口的網路存取控制(PNAC)機制,允許在主機連接到以太網交換機時使用EAP身份驗證。"}, {"t": "MMS", "d": "對SMS的擴展,允許透過蜂窩數據連接發送數位數據。"}, {"t": "group account", "d": "組帳戶是用戶帳戶的集合,在建立檔案權限和用戶權限時很有用。"}, {"t": "PtH attack", "d": "一種基於網路的攻擊,攻擊者竊取散列用戶憑據並按原樣使用它們來嘗試對散列憑據起源的同一網路進行身份驗證。"}, {"t": "NTLM authentication", "d": "Microsoft 用於其產品的質挑-回應身份驗證協定。"}, {"t": "sentiment analysis", "d": "一種AI/ML 算法,可以描述或分類自然語言語句中表達的意圖。"}, {"t": "hybrid cloud", "d": "同時使用私有和公共元素的雲部署。"}, {"t": "ECC", "d": "一種非對稱加密算法,利用有限域橢圓曲線的代數結構來導出公鑰/私鑰對。"}, {"t": "pharming", "d": "一種模擬攻擊,其中對網站的請求被重定向到外觀相似但虛假的網站。"}, {"t": "qualitative analysis", "d": "一種風險分析方法,使用意見和推理來衡量風險的可能性和影響。"}, {"t": "cloud deployment model", "d": "將雲的所有權和管理分類為公共、私有、社區或混合。"}, {"t": "WinHex", "d": "Windows 取證工具,允許收集和檢查磁盤和內存映像中的二進制代碼。"}, {"t": "e-discovery", "d": "收集、保存和分析數位證據的程序和工具。"}, {"t": "security control", "d": "為減輕風險而實施的技術或程序,確保訊息的機密性、完整性和可用性。"}, {"t": "mantrap", "d": "具有兩個網關的安全進入系統,在任何時候只有一個是開放的。"}, {"t": "job rotation", "d": "防止任何個人長時間執行相同角色或任務的策略。"}, {"t": "SDN", "d": "API和兼容的硬體/虛擬設備允許可編程網路設備和系統。"}, {"t": "metadata", "d": "作為對象、系統狀態或事務的屬性存儲或記錄的訊息。"}, {"t": "EAP-FAST", "d": "一種EAP方法,有望解決 LEAP 的缺點。"}, {"t": "data custodian", "d": "負責管理存儲數據資產的系統的個人,包括負責執行存取控制、加密和備份/恢復措施。"}, {"t": "L2TP", "d": "VPN 協定,用於透過各種網路協定(如IP、封包中繼或ATM)對 PPP會話進行隧道傳輸。"}, {"t": "SEH", "d": "一種解釋代碼執行期間可能出現的意外錯誤情況的機制。"}, {"t": "AAA", "d": "一種安全概念,其中集中式平台驗證主體身份,確保為主體分配相關權限,然後記錄這些操作以創建審計踪跡。"}, {"t": "SFTP", "d": "檔案傳輸協定的安全版本,它使用安全外壳(SSH) 隧道作為加密方法。"}, {"t": "RADIUS", "d": "用於管理遠程和無線驗證基礎設施的標準協定。"}, {"t": "UTM", "d": "一體化安全設備和結合了防火牆、惡意軟體掃描器、入侵檢測、漏洞掃描器、 數據丟失防護、內容過濾等功能的代理。"}, {"t": "phishing", "d": "一種基於電子郵件的社會工程攻擊,攻擊者從所謂信譽良好的來源發送電子郵件,試圖從受害者那裡獲取私人訊息。"}, {"t": "risk deterrence", "d": "在風險緩解中,部署安全控制以減少威脅情景的可能性和/或影響的回應。"}, {"t": "Diamond Model", "d": "分析網路安全事件的框架。"}, {"t": "EPP", "d": "執行多項安全任務的軟體代理和監控系統。"}, {"t": "active defense", "d": "透過破壞或欺騙威脅行為者的能力來應對威脅的做法。"}, {"t": "PCI DSS", "d": "適用於處理信用卡或銀行卡支付的組織的訊息安全標準。"}, {"t": "PFS", "d": "傳輸加密的一種特性,可確保密鑰被洩露時,洩露只會影響單個會話。"}, {"t": "heuristic analysis", "d": "一種使用特徵比較和相似性而非特定簽名匹配來識別觀察目標是否是惡意的方法。"}, {"t": "credential stuffing", "d": "蠻力攻擊,其中針對多個網站測試被盜的用戶帳戶名和密碼。"}, {"t": "MTTF", "d": "設備或組件預期運行的平均時間。"}, {"t": "Netflow", "d": "思科開發的一種結構化資料庫報告網路流訊息的方法。"}, {"t": "SECaaS", "d": "客戶能夠利用雲供應商在電腦安全領域提供訊息、軟體、基礎設施和流程。"}, {"t": "Maneuver", "d": "威脅行為者和防禁者可以使用欺騙或反擊策略來獲得位置優勢的概念。"}, {"t": "hot/cold aisle", "d": "伺服器機架的佈置以最大限度地提高冷卻系統的效率。"}, {"t": "OWASP", "d": "一個發布大量安全應用程序開發資源的慈善機構和社群。"}, {"t": "persistence", "d": "在網路安全中,威脅行為者保持對目標主機或網路的秘密存取的能力。"}, {"t": "DER", "d": "用於在數位憑證中構造訊息的二進制格式。"}, {"t": "code signing", "d": "使用數位簽名來確保編程代碼的來源和完整性的方法。"}, {"t": "IV attack", "d": "一種無線攻擊,攻擊者能夠預測或控制加密過程的IV。"}, {"t": "data controller", "d": "在隱私法規中,實體決定收集、存儲和使用個人數據的原因和方式。"}, {"t": "token", "d": "包含身份驗證和/或授權數據的實體或虛擬項目,通常用於多因素身份驗證。"}, {"t": "WPA", "d": "對Wi-Fi網路的存取進行身份驗證和加密的標準。也稱為WPA2、WPA3。"}, {"t": "ISA", "d": "任何將其IT系統與第三方互連的聯邦機構都必須創建一個ISA 來管理這種體系。"}, {"t": "insecure object reference", "d": "編碼漏洞,其中未經驗證的輸入用於選擇資源對象,例如檔案或資料庫。"}, {"t": "Z-Wave", "d": "主要用於家庭自動化的低功耗無線通訊協定。"}, {"t": "watering hole attack", "d": "攻擊者針對特定團體或組織,發現他們經常存取的網站,並將惡意代碼注入這些網站的攻擊。"}, {"t": "automation", "d": "使用腳本和API 來配置和取消配置系統,無需人工干預。"}, {"t": "ERM", "d": "評估、衡量和減輕組織中普遍存在的許多風險的綜合過程。"}, {"t": "RA (註冊機構)", "d": "在PKI中,接受數位憑證請求並驗證提出這些請求的實體的機構。"}, {"t": "red team", "d": "滲透測試或事件回應練習中的敵對或攻擊團隊。"}, {"t": "community cloud", "d": "為合作租戶共享使用而部署的雲。"}, {"t": "session affinity", "d": "負載均衡器用來將流量路由到已與相關客戶端建立連接的設備的調度方法。"}, {"t": "penetration testing", "d": "使用主動工具和安全實用程序透過模擬對系統的攻擊來評估安全性的測試。"}, {"t": "SOAR", "d": "一類安全工具,透過編排自動化運行手冊和提供數據豐富來促進事件回應、威脅搜尋和安全配置。"}, {"t": "provenance", "d": "在數位取證中,能夠將證據的來源追溯到犯罪現場並表明它沒有被篡改。"}, {"t": "entropy", "d": "無序的量度、隨機變量的均值。密碼系統應該表現出高熵以更好地抵抗暴力攻擊。"}, {"t": "FIM", "d": "一種審查系統檔案以確保它們沒有被篡改的軟體。"}, {"t": "IEEE 802.1X", "d": "一種封裝 LAN 上的EAP 通訊(EAPOL) 以實現基於端口的身份驗證的標準。"}, {"t": "EDR", "d": "收集系統數據和日誌以供監控分析的軟體代理系統提供威脅的早期檢測。"}, {"t": "stored procedure", "d": "一組預編譯的資料庫語句之一,可用於驗證資料庫的輸入。"}, {"t": "IAM", "d": "為用戶、電腦和其他實體提供識別、身份驗證和授權機制以使用網路、操作系統和應用程序等組織資產的安全過程。"}, {"t": "reverse shell", "d": "惡意生成的遠程指令 shell,受害者主機打開與攻擊主機的連接。"}, {"t": "Keylogger", "d": "可以記錄用戶擊鍵的惡意軟體或硬體。"}, {"t": "UEM", "d": "用於控制存儲在所有類型的固定,移動和物聯網計算設備上的設備設置、應用程序和企業數據的企業軟體。"}, {"t": "ICS", "d": "管理嵌入式設備(旨在執行特定、專用功能的電腦系統)的網路。"}, {"t": "deprovisioning", "d": "從包或實例中刪除應用程序的過程。"}, {"t": "mode of operation", "d": "區塊對稱密碼的實現。"}, {"t": "NGFW", "d": "先進防火牆技術,從應用感知、用戶的過濾、入侵防禦到雲檢測。"}, {"t": "MSA", "d": "評估質量管理過程使用的數據收集和統計方法。"}, {"t": "IPAM", "d": "軟體整合多個 DHCP和DNS 服務的管理,以監睪整個企業網路的IP地址分配"}, {"t": "residual risk", "d": "即使在控制措施到位後仍然存在的風險。"}, {"t": "port forwarding", "d": "路由器從互聯網接收特定應用程序的請求並將它們發送到 LAN 上指定主機的過程。"}, {"t": "counter mode", "d": "一種加密操作模式,其中使用數位計數器值來創建不斷變化的 IV。也稱為 CTM (計數器模式)和CM(計數器模式)。"}, {"t": "NAT", "d": "一種路由機制,透過在路由器外部的單個公共地址和內部不可路由的私有地址之間進行轉換。"}, {"t": "dump file", "d": "包含從系統內存中捕獲的數據的檔案。"}, {"t": "logic bomb", "d": "設置為在特定情況下運行或回應已定義事件的惡意程序或腳本。"}, {"t": "geofencing", "d": "基於真實世界地理創建虛擬邊界的實踐。"}, {"t": "kill chain", "d": "洛克希德馬丁公司開發的一種模型,描述了威脅行為者進行網路入侵的階段。"}, {"t": "stream cipher", "d": "一種對稱加密,它將明文位或字節流與由密鑰初始化的偽隨機流相結合。"}, {"t": "managerial control", "d": "對訊息系統進行監督的一類安全控制。"}, {"t": "non-repudiation", "d": "確保發送傳輸或創建數據的一方與該數據保持關聯並且不能拒絕發送或創建該數據的安全目標。"}, {"t": "exploitation framework", "d": "自動交付常見軟體和韌體漏洞的漏洞利用的工具套件。"}, {"t": "public cloud", "d": "為多個独立租戶共享使用而部署的雲。"}, {"t": "vendor management", "d": "識別漏洞並確保供應鏈安全的政策和程序。"}, {"t": "PKI", "d": "為驗證主體身份而部署的憑證頒發機構、數位憑證、軟體、服務和其他加密組件的框架。"}, {"t": "CSP", "d": "提供公共雲服務模式的供應商,例如 PaaS、IaaS 或 SaaS。"}, {"t": "ncat", "d": "用於透過網路連接讀取和寫入原始數據的實用程序。"}, {"t": "detective control", "d": "一種在事件期間採取行動以識別或記錄正在發生的安全控制。"}, {"t": "SED", "d": "控制器可以自動加密寫入其中的數據的磁盤驅動器。"}, {"t": "evil twin", "d": "一種無線接入點,欺騙用戶相信它是合法的網路接入點。"}, {"t": "error handling", "d": "預測和處理流程執行期間拋出的異常的編碼方法。"}, {"t": "routing protocols", "d": "管理路由器如何在網路之間通訊和轉發流量的規則。"}, {"t": "vulnerability", "d": "可能被意外觸發或被故意利用以導致安全漏洞的弱點。"}, {"t": "attack vector", "d": "威脅參與者未經授權存取系統的特定路徑。也稱為向量。"}, {"t": "purple team", "d": "一種滲透測試模式,紅色和藍色團隊在整個參與過程中共享訊息並進行協作。"}, {"t": "dd command", "d": "對輸入檔案進行逐位複制的 Linux指令,通常用於磁盤映像。"}, {"t": "VM escaping", "d": "在VM 中運行的惡意軟體能夠直接與管理程序或主機內核交互的攻擊。"}, {"t": "extranet", "d": "為外部各方(尤其是供應商、合作夥伴和特定客戶)提供一些存取權限的專用網路。"}, {"t": "ALE", "d": "組織每年的風險總成本。這是由將SLE 乘以年發生率(ARO)。"}, {"t": "post-quantum", "d": "預測當前加密實施面臨的挑戰和一般安全問題,在這個世界中,威脅行為者可以獲得重要的量子處理能力。"}, {"t": "CAPTCHA", "d": "電腦難以解釋的文字或某些語音的音頻圖像。驗證碼用於防止機器人在網路論壇和社交媒體網站上創建帳戶等目的向他們發送垃圾郵件。"}, {"t": "CE", "d": "一種透過擦除媒體加密密鑰來清理自加密驅動器的方法。"}, {"t": "IaaS", "d": "一種使用雲來提供任何或所有基礎設施需求的計算方法。"}, {"t": "tcpreplay command", "d": "一個指令行實用程序,用於重播透過網路適配器保存到檔案的封包。"}, {"t": "SIP", "d": "用於建立、取消和管理 VoIP 和會議通訊。"}, {"t": "shadow IT", "d": "未經系統所有者授權在專用網路上使用的電腦硬體、軟體或服務。"}, {"t": "OOB", "d": "使用與使用者網路不同的網路存取設備的管理界面。"}, {"t": "CAN bus", "d": "一種串行網路,允許嵌入式可編程邏輯控制器之間進行通訊。"}, {"t": "Kerberos", "d": "基於時間敏感的票證授予系統的單點登錄身份驗證和授權服務。"}, {"t": "SID", "d": "Windows 分配給帳戶的值,操作系統使用它來標識該帳戶。"}, {"t": "USB data blocker", "d": "硬體插件可防止在將設備插入USB 充電點時進行惡意數據傳輸。"}, {"t": "split tunnel", "d": "VPN配置,其中只有專用網路的流量透過VPN網關路由。"}, {"t": "DHCP spoofing", "d": "攻擊者回應客戶端請求從 DHCP伺服器分配地址的攻擊。"}, {"t": "geolocation", "d": "識別或估計物體的實體位置,例如雷達源、移動電話或連接互聯網的設備。"}, {"t": "orchestration", "d": "部署過程中多個步驟的自動化。"}, {"t": "tethering", "d": "使用移動設備的蜂窩數據計劃為筆記型電腦或PC 提供互聯網存取。"}, {"t": "PHI", "d": "將某人識別為醫療和保險記錄對象的訊息。"}, {"t": "false positive", "d": "在安全掃描中,不應該報告的情況。"}, {"t": "war driving", "d": "使用 Wi-Fi 探索器檢測 WLAN,然後利用它們或試圖闖入它們的做法。"}, {"t": "DNS hijacking", "d": "攻擊者修改電腦的 DNS 配置以指向惡意 DNS 伺服器的攻擊。"}, {"t": "router firewall", "d": "具有路由器主要功能的硬體設備,還具有嵌入到路由器韌體中的防火牆功能。"}, {"t": "captive portal", "d": "客戶端在被授予完全網路存取權限之前被重定向到的網頁或網站。"}, {"t": "MAC (訊息驗證碼)", "d": "透過將訊息的散列與共享秘密相結合來證明訊息的完整性和真實性。"}, {"t": "vishing", "d": "一種基於人的攻擊,攻擊者透過電話交談或利用IP的語音訊息服務時提取資訊。"}, {"t": "SWG", "d": "一種設備或代理伺服器,透過過濾垃圾郵件和惡意軟體以及對存取的站點類型實施存取限制來調解客戶端與互聯網的連接。"}, {"t": "threat actor", "d": "對已被確定為安全事件或風險的事件負責的個人或實體。"}, {"t": "private cloud", "d": "為單個實體使用而部署的雲。"}, {"t": "port mirroring", "d": "將入口和/或出口通訊從一個或多個交換機端口復製到另一個端口。"}, {"t": "baseband radio", "d": "智能手機中充當蜂窩調製解調器的芯片和韌體。"}, {"t": "sandbox", "d": "與主機系統隔離的計算環境,以保證環境以受控、安全的方式運行。"}, {"t": "SPIM", "d": "透過即時訊息而非電子郵件傳播的垃圾郵件攻擊。"}, {"t": "horizontal privilege escalation", "d": "當用戶存取或修改他們無權存取的特定資源時。"}, {"t": "differential backup", "d": "一種備份類型,備份自上次完整備份以來已更改的所有選定檔案。"}, {"t": "XSRF", "d": "托管在攻擊者站點上的惡意腳本,可以利用在同一瀏覽器中的另一個站點上啟動的會話。也稱為csrf。"}, {"t": "TAXII", "d": "用於提供編碼訊息以自動進行事件檢測和分析的協定。"}, {"t": "SQL injection", "d": "一種攻擊,透過存取應用程序的客戶端,將資料庫查詢注入指向伺服器的輸入數據。"}, {"t": "robot sentry", "d": "能夠巡邏現場場所或監控網關的遥控或自主機器人。"}, {"t": "SOA", "d": "一種軟體架構,其中解決方案的組件被視為鬆散耦合的服務。"}, {"t": "RPO", "d": "組織可以容忍丟失數據不可恢復的最長時間。"}, {"t": "account policy", "d": "一組管理用戶安全訊息的規則,例如密碼過期和唯一性,可以全局設置"}, {"t": "sinkhole", "d": "一種 DoS 攻擊緩解策略,可將氾濫目標地址的流量引導到不同的網路進行分析。"}, {"t": "bash", "d": "用於類 Unix 系統的指令 shell 和腳本語言。"}, {"t": "separation of duties", "d": "概念指出應在個人之間劃分職責,以防止道德衝突或濫用權力。"}, {"t": "MFA", "d": "一種身份驗證方案,要求用戶提供至少兩個不同的因素作為憑據。"}, {"t": "OCSP", "d": "允許客戶端請求數位憑證的狀態,檢查它是否被吚銷。"}, {"t": "LDAPS", "d": "一種使用SSL/TLS 加密實現LDAP的方法。"}, {"t": "shimming", "d": "在應用程序和操作系統之間開發和實現附加代碼的過程,目的用來啟用原本無法使用的功能。"}, {"t": "operational control", "d": "由人實施的一類安全控制。"}, {"t": "cat command", "d": "Linux 指令,用於查看和組合(連接)檔案。"}, {"t": "tokenization", "d": "一種用唯一標記代替真實數據的去標識化方法。"}, {"t": "false negative", "d": "在安全掃描中,應該報告的情況下沒有報告。"}, {"t": "LDAP", "d": "用於存取網路目錄資料庫的網路協定。"}, {"t": "pinning", "d": "一種已棄用的信任數位憑證的方法,它繞過CA層次結構和信任鏈。"}, {"t": "hot site", "d": "一個完全配置的備用網路,可以在災難後快速上線。"}, {"t": "boot attestation", "d": "由防篡改TPM密鑰簽名並報告給網路伺服器的引導狀態完整性數據的報告。"}, {"t": "PFX", "d": "用於存儲私鑰和憑證數據的 Windows 檔案格式。"}, {"t": "SIEM", "d": "一種對網路硬體和應用程序生成的安全警報進行實時或近實時分析的解決方案。"}, {"t": "risk matrix/heat map", "d": "指示為工作流、項目或部門識別的風險因素的可能性和影響的圖表。"}, {"t": "change control", "d": "記錄和批准變更需求的過程。"}, {"t": "data exposure", "d": "攻擊者能夠繞過存取控制並從系統中檢索機密或敏感數據的軟體漏洞。"}, {"t": "escrow", "d": "在密鑰管理中,與第三方存儲備份密鑰。"}, {"t": "VLAN", "d": "使用交換技術創建的邏輯上分離的網路。"}, {"t": "spear phishing", "d": "針對特定個人的基於電子郵件或網路的網路釣魚形式。"}, {"t": "compensating control", "d": "當主要控制失敗或不能完全滿足預期時採取風險緩解措施的一種安全措施。"}, {"t": "private key", "d": "在非對稱加密中,私鑰只有持有者知道。"}, {"t": "birthday attack", "d": "一種密碼攻擊,利用用於加密密碼的數學算法中的弱點,以利用不同密碼輸入產生相同加密輸出的概率。"}, {"t": "fog computing", "d": "在物聯網設備的網路邊緣和數據中心之間提供處理資源以減少延遲。"}, {"t": "VPN", "d": "在透過不安全網路連接的兩個端點之間創建的安全隧道。"}, {"t": "SAE", "d": "WPA3 引入的Wi-Fi 網路個人認證機制,解決 WPA-PSK 方法中的漏洞。"}, {"t": "DDoS", "d": "使用多個受感染主機(殭屍網路)以請求或回應流量壓倒服務的攻擊。"}, {"t": "input validation", "d": "用於確保輸入到應用程序中的字段或變量中的數據由該應用程序適當處理的任何技術。"}, {"t": "data remnant", "d": "即使在基本嘗試刪除該數據之後,存儲介質上的剩餘訊息。"}, {"t": "state actor", "d": "接受國家軍事和安全部門資源支持的威脅行為者。也稱為民族國家演员。"}, {"t": "onboarding", "d": "引進新員工、承包商或供應商的過程。"}, {"t": "risk-based framework", "d": "使用風險評估來優先考慮安全控制選擇和投資的框架。"}, {"t": "RTP", "d": "透過UDP打開視頻和語音應用程序的數據流。"}, {"t": "Raspberry Pi", "d": "開源平台,生產用於教育和工業原型設計的可編程電路板。"}, {"t": "SNMP", "d": "用於監控和管理網路設備的協定。"}, {"t": "BPDU guard", "d": "交換機端口安全功能,如果端口接收到與生成樹相關的 BPDU 通知,則禁用該端口。這是在可能存在惡意 BPDU 封包的存取端口上配置的。"}, {"t": "smart meter", "d": "無需用戶干預即可向供應商提交讀數的公用電表。"}, {"t": "trend analysis", "d": "隨著時間的推移檢測數據集中的模式,並使用這些模式來預測未來事件。"}, {"t": "Cloud Security Alliance", "d": "為CSP提供安全指導的行業機構,包括企業參考架構和安全控制矩陣。"}, {"t": "time offset", "d": "在取證中,識別時區偏移是否已應用於檔案的時間戳。"}, {"t": "data at rest", "d": "主要存儲在特定媒體上的訊息,而不是從一種媒體移動到另一種媒體。"}, {"t": "RTBH", "d": "使用觸發設備發送BGP路由更新,指示路由器丟棄涵嗎嘗試 DDoS 的流量。"}, {"t": "identity fraud", "d": "偽造個人訊息的發明或個人訊息的盜竊和濫用。"}, {"t": "Nmap", "d": "用於拓撲、主機、服務和操作系統發現和柚舉的多功能端口掃描器。"}, {"t": "SSID", "d": "標識特定無線 LAN (WLAN)的字符串。"}, {"t": "BPA", "d": "兩家公司之間緊密合作的協議,例如大型IT公司與經銷商和解決方案提供商建立的伙伴關係協議。"}, {"t": "VM sprawl", "d": "配置漏洞,其中虛擬資產的配置和取消配置沒有得到適當的授權和監控。"}, {"t": "IaC", "d": "一種供應架構,其中資源的部署是透過腳本自動化和編排來執行的。"}, {"t": "microservices", "d": "一種軟體架構,其中解決方案的組件被視為高度解耦的服務。"}, {"t": "IRP", "d": "如果檢測到或報告某種類型的事件,必須執行的特定程序。"}, {"t": "regex", "d": "描述如何在給定文本上執行特定搜索模式的一組字符。"}, {"t": "SEAndroid", "d": "Android 為應用程序、容器隔離和存儲分段的細度權限。"}, {"t": "ATT&CK", "d": "由MITRE 公司維護的知識庫,用於列出和解釋特定的對抗戰術技術和程序。"}, {"t": "data masking", "d": "一種去標識化方法,其中通用或占位符標籤替換真實數據,同時保留原始數據的結構或格式。"}, {"t": "downgrade attack", "d": "一種加密攻擊,攻擊者利用向後兵容性的需要,迫使電腦系統放棄使用加密訊息,轉而使用明文訊息。"}, {"t": "scalability", "d": "計算環境能夠優雅地滿足其不斷增長的資源需求的屬性。"}, {"t": "C&C", "d": "攻擊者透過殭屍網路引導、分發和控制惡意軟體的主機和服務基礎設施。也稱為 C2。"}, {"t": "offline CA", "d": "在PKI中,CA(通常是根)已與網路斷開連接以保護其免受損害。"}, {"t": "NDA", "d": "規定實體不會與未經授權的第三方共享機密訊息、知識或材料的協議。"}, {"t": "change management", "d": "為組織整體配置管理工作的一環,實施系統配置變更的過程。"}, {"t": "PLC", "d": "一種設計用於部署在工業或戶外環境中的電腦,可以自動化和監控機械系統。"}, {"t": "chain of custody", "d": "從收集到出庭,再到處置的證據歷史記錄。"}, {"t": "honeypot/honeynet", "d": "設置的主機、網路或檔案,目的是引誘攻擊者遠離具有實際價值的資產和/或發現攻擊策略和安全配置中的弱點。"}, {"t": "SLE", "d": "在特定風險因素的單次發生中損失的金額。"}, {"t": "collector", "d": "收集或接收來自其他網路系統的日誌和/或狀態數據的網路設備。"}, {"t": "chmod command", "d": "用於管理檔案權限的 Linux 指令。"}, {"t": "bastion host", "d": "通常位於DMZ中的伺服器,被配置為提供單一服務以降低被入侵的可能性。"}, {"t": "replication", "d": "在兩個處理系統之間同時自動複製數據或從主位置複製到輔助位置。"}, {"t": "federation", "d": "提供跨多個系統和企業的共享登錄能力的過程。它本質上連接了多個系統的身份管理服務。"}, {"t": "PUP", "d": "不能明確歸類為惡意軟體,但用戶可能沒有選擇或不想要的軟體。"}, {"t": "integer overflow", "d": "計算結果太大而無法放入其分配存儲空間的攻擊,這可能導致崩潰或數據損壞,並可能觸發緩衝區溢出。"}, {"t": "fingerprint scanner", "d": "生物特徵認證設備,可以生成用戶指紋的模板簽名,然後將模板與提交認證的數位進行比較。"}, {"t": "ISO/IEC 27K", "d": "一套全面的訊息安全標準,包括安全和風險管理、合規性和技術實施的最佳實踐。"}, {"t": "application firewall", "d": "軟體設計為在伺服器上運行以保護特定應用程序,例如 Web 伺服器或SQL 伺服器。"}, {"t": "VDE", "d": "用戶桌面和軟體應用程序作為 VDI 下的實例進行配置。"}, {"t": "CVE", "d": "用於識別由 MITRE 開發並被 NIST 採用的漏洞的方案。"}, {"t": "control risk", "d": "當控制不能提供預期的緩解水平時,就會出現風險。"}, {"t": "ransomware", "d": "一種惡意軟體,加密受害者的數據並要求付款以換取解密密鑰。"}, {"t": "RA", "d": "在PKI中,可以從備份或托管複製加密密鑰並將其恢復到主題主機或用戶的帳戶或帳戶組合。"}, {"t": "Nessus", "d": "最著名的商業漏洞掃描程序之一,由Tenable Network Security 生產。也稱為 Tenable。"}, {"t": "data in transit", "d": "在兩個主機之間傳輸的訊息,例如透過專用網路或Internet。也稱為動態數據。"}, {"t": "MAC cloning", "d": "攻擊者偽造設備網路接口的工廠分配 MAC 地址的攻擊。也稱為 MAC 欺騙。"}, {"t": "PNAC", "d": "一種交換機(或路由器),它在啟用端口之前對連接的設備執行某種身份驗證。"}, {"t": "DCHP snooping", "d": "一種配置選項,使交換機能夠檢查 DHCP 流量以防止 MAC 欺騙。"}, {"t": "SPOF", "d": "如果發生故障會導致服務完全中斷的組件或系統。"}, {"t": "retention policy", "d": "規定訊息需要在備份和歸檔系統上保留多長時間。"}, {"t": "blockchain", "d": "一個概念,使用加密技術保護公共分類帳中不斷擴大的交易記錄列表。"}, {"t": "risk transference", "d": "在風險緩解中,與另一個實體轉移或分擔風險責任的反應。"}, {"t": "baseline configuration", "d": "將應用於組織中特定係統或網路的安全和配置設置的集合。"}, {"t": "S/MIME", "d": "一種電子郵件加密標準,將數位簽名和公鑰加密添加到傳統的MIME 通訊中。"}, {"t": "QA", "d": "旨在確保無缺陷開發和交付的政策、程序和工具。"}, {"t": "MD5", "d": "產生128 位輸出的加密哈希函數。"}, {"t": "clean desk policy", "d": "一項組織政策,要求員工工作區域不得包含潛在的敏感訊息; 不得將敏感檔案遺漏在未經授權的人員可能看到的地方。"}, {"t": "RTOS", "d": "一種操作系統,它優先確定操作的執行以確保對時間關鍵任務的一致回應。"}, {"t": "SoC", "d": "將多個邏輯控制器的平台功能集成到單個芯片上的處理器。"}, {"t": "supplicant", "d": "在 EAP 架構中,請求存取網路的設備。"}, {"t": "intelligence fusion", "d": "在威脅追蹤中,使用威脅情報數據源自動檢測對手 IoC 和TTP。"}, {"t": "default account", "d": "在伺服器和網路設備上配置的預設管理帳戶和訪客帳戶可能是未經授權的存取點。"}, {"t": "RAID", "d": "支持多設備存儲系統不同配置的冗餘和容錯的規範。"}, {"t": "deterrent control", "d": "一種阻止入侵企圖的安全控制。"}, {"t": "nonce", "d": "在加密通訊中僅使用一次的任意數位,通常用於防止重放攻擊。"}, {"t": "percent encoding", "d": "將字符編碼為由百分號分隔的十六進制值的機制。"}, {"t": "HA", "d": "定義系統在保持高水平系統性能的同時實現 100% 時間提供數據可用性的目標的接近程度的屬性。"}, {"t": "content filter", "d": "一種軟體應用程序或網關,用於過濾客戶端對各種類型的互聯網內容 (Web、FTP、IM 等)的請求。"}, {"t": "deidentification", "d": "在數據保護中,方法和技術在數據分發之前從數據中刪除識別訊息。"}, {"t": "homomorphic encryption", "d": "允許在不解密數據集中計算某些字段的方法。"}, {"t": "ISAC", "d": "非營利組織,旨在成員之間共享特定部門的威脅情報和安全最佳實踐。"}, {"t": "edge computing", "d": "在物聯網設備的網路邊緣附近提供處理資源以減少延遲。"}, {"t": "EAP-TLS", "d": "一種EAP方法,需要伺服器端和客戶端憑證才能使用 SSL/TLS 進行身份驗證。"}, {"t": "AH", "d": "一種IPSec 協定,它為傳輸數據的來源提供身份驗證以及完整性和防止重放攻擊的保護。"}, {"t": "multipath", "d": "過度配置控制器和佈線,以便主機具有到存儲介質的故障轉移連接。"}, {"t": "ACL", "d": "存取控制條目 (ACE)的集合,用於確定允許或拒絕哪些主體(用戶帳戶、主機 IP 地址等)存取對像以及授予的權限(只讀、讀取/寫,等等)。"}, {"t": "card cloning/skimming", "d": "透過讀取/側錄存儲在其上的機密數據來複製智能卡。"}, {"t": "stateful inspection", "d": "防火牆中使用的一種技術,用於分析向下到應用層的封包。"}, {"t": "OID", "d": "用於數位憑證屬性的數位模式。"}, {"t": "data governance", "d": "對組織中使用的訊息的可用性、可用性和安全性的整體管理。"}, {"t": "technical control", "d": "作為系統(硬體、軟體或韌體)實施的一類安全控制。"}, {"t": "EOL", "d": "產品生命週期階段,銷售停止,支持選項隨著時間的推移而減少。"}, {"t": "reverse proxy", "d": "一種保護伺服器不直接接觸客戶端請求的代理伺服器。"}, {"t": "SMiShing", "d": "一種使用 SMS 短信誘騙受害者洩露訊息的網路釣魚形式。"}, {"t": "measured boot", "d": "一種UEFI 功能,它收集安全指標以在證明報告中驗證啟動過程。"}, {"t": "Opal", "d": "在存儲設備上實現設備加密的標準。"}, {"t": "PSK", "d": "基於密碼短語的機制,允許對無線網路進行組驗證。"}, {"t": "MTBF", "d": "預測預期故障間隔時間的設備或組件的評級。"}, {"t": "playbook", "d": "為檢測和回應特定類型的事件而執行的操作清單。"}, {"t": "proxy server", "d": "調解客戶端和另一台伺服器之間的通訊的伺服器。"}, {"t": "continuous deployment", "d": "將應用程序和平台更新快速投入生產的軟體開發方法。"}, {"t": "risk acceptance", "d": "確定風險在組織的胃口範圍內的回應,除了持續監控之外不需要任何應對措施。"}, {"t": "runbook", "d": "劇本的自動化版本,為人類分析留下明確定義的交互點。"}, {"t": "sanitization", "d": "彻底彻底地從存儲介質中刪除數據以使檔案殘餘無法恢復的過程。"}, {"t": "RCS", "d": "獨立於平台的進階訊息傳遞功能,旨在取代 SMS 和 MMS。"}, {"t": "Arduino", "d": "為教育和工業原型設計生產可編程電路板的開源平台。"}, {"t": "IDS", "d": "一種軟體和/或硬體系統,用於掃描、審核和監控安全基礎設施以發現正在進行的攻擊跡象。"}, {"t": "OSINT", "d": "公開可用的訊息以及用於聚合和搜索的工具。"}, {"t": "ARP inspection", "d": "交換機的一項可選安全功能,可防止過多的ARP回復氾濫網段。"}, {"t": "BIA", "d": "識別組織風險並確定其對正在進行的關鍵任務運營的影響的系統活動。"}, {"t": "threat hunting", "d": "網路安全技術旨在檢測正常安全監控未發現的威脅的存在。"}, {"t": "blue team", "d": "滲透測試或事件回應練習中的防禦團隊。"}, {"t": "rootCA", "d": "在PKI中,向分層結構中的中間CA頒發憑證的CA。"}, {"t": "typosquatting", "d": "一種攻擊,攻擊者使用現有域的常見拼寫錯誤註冊域名。"}, {"t": "quantitative analysis", "d": "一種風險分析方法,基於為因素分配具體值。"}, {"t": "patch management", "d": "識別、測試和部署操作系統和應用程序更新。"}, {"t": "OATH", "d": "由主要PKI 提供商組成的行業機構,旨在開發一個開放、強大的身份驗證框架。"}, {"t": "port security", "d": "防止連接到交換機端口的設備在網路上進行通訊,除非它與給定的 MAC 地址或其他保護配置檔案匹配。"}, {"t": "VPC", "d": "在公共雲上可供單個雲消費者使用的私有網段。"}, {"t": "BYOD", "d": "安全框架和工具,便於使用個人擁有的設備存取公司網路和數據。"}, {"t": "botnet", "d": "一組被稱為 bot 的控製程序感染的主機,攻擊者可以利用這些主機發動攻擊。也被稱為殭屍。"}, {"t": "data steward", "d": "主要負責數據質量的個人,確保使用適當的元數據標記和識別數據,並以符合適用法律和法規的格式和值收集和存儲數據。"}, {"t": "data exfiltration", "d": "攻擊者獲取存儲在專用網路內部的數據並將其移動到外部網路的過程。"}, {"t": "correlation", "d": "日誌分析的功能,它鏈接日誌和狀態數據以識別應作為事件記錄或警告的模式"}, {"t": "AES", "d": "一種基於 Rijndael 算法的對稱128、192或256位分組密碼,由比利時密碼學家 Joan Daemen 和 Vincent Rijmen 開發,並被美國政府採用作為替代 DES 的加密標準。"}, {"t": "threat map", "d": "近乎實時地顯示威脅源的動畫地圖。"}, {"t": "TAP", "d": "插入電纜以複製封包以進行分析的硬體設備。"}, {"t": "FTK", "d": "由 AccessData 發布的商業數位取證調查管理和實用程序套件。"}, {"t": "integrity", "d": "保持組織訊息準確、無錯誤和未經授權的修改的基本安全目標。"}, {"t": "nxlog", "d": "針對多平台日誌收集和聚合優化的軟體。"}, {"t": "HOTP", "d": "一種算法,使用基於哈希的身份驗證碼生成一次性密碼以驗證訊息的真實性。"}, {"t": "EOSL", "d": "供應商不再提供支持的產品生命週期階段。"}, {"t": "service account", "d": "旨在運行後台服務而非交互式登錄的主機或網路帳戶。"}, {"t": "head command", "d": "用於顯示檔案第一行的 Linux 實用程序。"}, {"t": "ABAC", "d": "一種存取控制技術,它評估每個主體擁有的一組屬性以確定是否應授予存取權限。"}, {"t": "inherent risk", "d": "如果沒有採取控制措施來減輕事件,事件將帶來的風險。"}, {"t": "domain hijacking", "d": "一種劫持攻擊,攻擊者透過更改其註冊訊息,然後將域名轉移給另一個實體來竊取域名。有時稱為品牌劫持。"}, {"t": "time of day restrictions", "d": "限制用戶存取資源的策略或配置設置。"}, {"t": "SDK", "d": "供應商提供的編碼資源,用於協助使用其平台或 API 的開發項目。"}, {"t": "SAN", "d": "數位憑證中的字段,允許主機由多個主機名/子域標識。"}, {"t": "ARO", "d": "在風險計算中,風險的概率/可能性表示為每年特定損失預計發生的次數。"}, {"t": "CN", "d": "表示主機名或用戶名的X500 屬性,也用作數位憑證的主題標識符。"}, {"t": "transit gateway", "d": "在雲端部署虛擬路由器來促進VPC子網和VPN 網關之間的連接。"}, {"t": "PKCS", "d": "定義憑證頒發機構和數位憑證使用的一系列標準。"}, {"t": "SaaS", "d": "一種利用雲計算向用戶提供應用服務的計算方式。"}, {"t": "VDI", "d": "一種將個人計算環境與用戶的實體電腦分開的虛擬化實現。"}, {"t": "defense in depth", "d": "一種將網路安全層定位為網路流量障礙的安全策略;每一層都旨在減緩攻擊的進程,而不是彻底消除它。"}, {"t": "DMZ", "d": "由一個或多個防火牆與專用網路的其餘部分隔離的網段,該防火牆透過指定端口接受來自互聯網的連接。"}, {"t": "Cuckoo", "d": "用於惡意軟體分析的沙箱的實現。"}, {"t": "SDV", "d": "用於報告配置和狀態數據的API,用於自動監控和警報。"}, {"t": "PPP", "d": "工作在第2層(數據鏈路)的撥號協定用於將設備遠程連接到網路。"}, {"t": "IPFIX", "d": "Netflow 框架的基於標準的版本。"}, {"t": "tailgating", "d": "社會工程技術,透過跟蹤不知道他們存在的人來進入建築物。"}, {"t": "SAML", "d": "一種基於XML 的數據格式,用於在客戶端和服務之間交換身份驗證訊息。"}, {"t": "MAC flooding", "d": "一種 ARP 中毒攻擊的變體,交換機的緩存表被來自隨機源 MAC 地址的封包淹沒。"}, {"t": "IoC", "d": "資產或網路已受到攻擊或當前受到攻擊的跡象。"}, {"t": "GDPR", "d": "保護歐盟(EU)公民個人數據的規定和要求。"}, {"t": "DSA", "d": "用於數位簽名的公鑰加密標準,為訊息提供身份驗證和完整性驗證。"}, {"t": "quantum cryptography", "d": "將量子計算用於密碼任務,例如分發密鑰或破解傳統密碼系統。"}, {"t": "industrial camouflage", "d": "假裝建築物或建築物部分的性質和用途的方法。"}, {"t": "thin AP", "d": "需要無線控制器才能運行的接入點。"}, {"t": "QoS", "d": "區分透過網路傳輸的數據的系統,可為特定應用程序預留帶寬。"}, {"t": "script kiddie", "d": "缺乏經驗、不熟練的攻擊者,通常使用他人創建的工具或腳本。"}, {"t": "corrective control", "d": "一種在事件發生後採取行動以消除或最小化其影響的安全控制。"}, {"t": "standard naming convention", "d": "對配置管理系統中的資產和數位資源/身份應用一致的名稱和標籤。"}, {"t": "MPLS", "d": "在分組交換而非電路交換網路中提供流量工程、服務等級和服務質量的一種手段。"}, {"t": "data in processing", "d": "存在於主機易失性內存中的訊息,例如係統內存或高速緩存。"}, {"t": "RSA", "d": "以其設計者 Ronald Rivest、Adi Shamir 和 Len Adelman 的名字命名,這是第一個成功的具有可變密鑰長度和區塊大小的公鑰加密算法。"}, {"t": "continuous integration", "d": "測試代碼更新並致力於開發或快速構建伺服器/代碼存儲庫的軟體開發方法。"}, {"t": "ESP", "d": "IPSec 子協定,可對封包的報頭和有效負載進行加密和驗證。"}, {"t": "MaaS", "d": "提供對本地和/或基於雲的主機和服務的持續安全性和可用性監控的雲服務。"}, {"t": "symmetric encryption", "d": "一種雙向加密方案,其中加密和解密都由相同的密鑰執行。"}, {"t": "attack surface", "d": "網路或應用程序接收外部連接或輸入/輸出的點,這些點是威脅參與者利用的潛在向量。"}, {"t": "curl command", "d": "用於對基於URL 的協定請求進行指令行操作的實用程序。"}, {"t": "cold site", "d": "預先確定的備用位置,可在災難後重建網路。"}, {"t": "server certificate", "d": "電子商務網站和其他收集與存儲機密訊息網站的身份數位憑證。"}, {"t": "offboarding", "d": "確保員工離開組織時滿足所有人力資源和其他要求的過程。"}, {"t": "cable lock", "d": "可以使用電纜紮帶和掛鎖對設備進行實體保護以防盜竊。一些系統還具有可鎖定的面板,可防止存取電源開關和可移動驅動器。"}, {"t": "elasticity", "d": "計算環境可以立即對工作負載不斷增加和減少的需求做出回應的屬性。"}, {"t": "COPE", "d": "企業移動設備配置模型,其中設備仍然是組織的財產,但允許某些個人用途,例如私人電子郵件、社交網路和 Web 瀏覽。"}, {"t": "XaaS", "d": "表達了大多數類型的IT需求都可以部署為雲服務模型的概念。"}, {"t": "stress test", "d": "一種軟體測試方法,用於評估軟體在極端負載下的性能。"}, {"t": "bug bounty", "d": "軟體和網路服務供應商為報告漏洞而運營的獎勵計劃。"}, {"t": "air-gap", "d": "一種網路隔離,將網路與所有其他網路實體隔離。"}, {"t": "deauthentication/disassociation", "d": "欺騙封包以斷開無線站以嘗試獲取身份驗證數據以進行破解。"}, {"t": "capture the flag", "d": "學習者必須在實時網路環境中識別令牌的培訓活動。"}, {"t": "CAC", "d": "提供基於憑證的身份驗證並支持雙因素身份驗證的智能卡。為回應國土安全指令,為國防部員工和承包商製作了 CAC。"}, {"t": "MAC filtering", "d": "將存取控制列表應用於交換機或接入點,以便只有具有批准 MAC 地址的客戶端才能連接到它。"}, {"t": "shared account", "d": "沒有憑據的帳戶或憑據為多人所知的帳戶。"}, {"t": "MitB attack", "d": "當 Web 瀏覽器透過安裝惡意插件或腳本而受到威脅時的攻擊。"}, {"t": "Adversarial Al", "d": "使用AI 識別漏洞和攻擊向量以規避安全系統。"}, {"t": "serverless", "d": "一種軟體架構,在雲端虛擬化容器中運行功能,而不是在專用伺服器實例上。"}, {"t": "FRR", "d": "衡量被拒絕存取的有效受試者數量的生物特徵評估指標。"}, {"t": "Faraday cage", "d": "一種金屬線網容器,可阻止外部電磁場進入容器。"}, {"t": "FTPS", "d": "一種使用TLS 保密的FTP。"}, {"t": "MoU", "d": "通常是初步或探索性協議,用於表達合作意向,不具有法律約束力。"}, {"t": "TLS", "d": "一種使用憑證進行身份驗證和加密以保護 Web 通訊的安全協定。"}, {"t": "MEF", "d": "一項業務或組織活動非常重要,不能推遲幾個小時以上。"}, {"t": "FC", "d": "用於實現 SAN 的高速網路通訊協定。"}, {"t": "RTO", "d": "事件發生後恢復正常業務運營和活動所需的時間長度。"}, {"t": "dead code", "d": "應用程序中的冗餘代碼,因為它永遠不會在程序流的邏輯中被調用。"}, {"t": "stapling", "d": "從OCSP回應者請求憑證狀態時用於緩解性能和隱私問題的機制。"}, {"t": "DiffServ", "d": "DSCP 字段用於指示第3層(IP)封包的優先級值,以促進 QoS 或 Cos調度。"}, {"t": "memdump command", "d": "Coroner 工具包用來開發 Linux 實用程序,可將系統內存數據轉儲到檔案中。"}, {"t": "VBA", "d": "用於在辦公文檔自動化中實現宏和腳本。"}, {"t": "DLP", "d": "一種軟體解決方案,可檢測並防止敏感訊息存儲在未經授權的系統上或透過未經授權的網路傳輸。"}, {"t": "warm site", "d": "在正常條件下處於休眠狀態或執行非關鍵功能的位置,但如果需要,可以快速轉換為關鍵操作站點。"}, {"t": "CIA triad", "d": "安全控制和管理的三個原則。也稱為訊息安全三合會。或 AIC 三合會。"}, {"t": "theHarvester", "d": "用於收集開源情報查詢結果的實用程序。"}, {"t": "brute force attack", "d": "一種密碼攻擊,攻擊者使用應用程序窮舉嘗試所有可能的字母數位組合來破解加密密碼。"}, {"t": "insider threat", "d": "一種威脅行為者,在系統上被分配了導致有意或無意事件的特權。"}, {"t": "containerization", "d": "主機操作系統應用的一種虛擬化類型,為應用程序提供隔離的執行環境。"}, {"t": "WAF", "d": "專門設計用於保護運行在 Web 伺服器及其後端資料庫上的軟體免受代碼注入和 DoS 攻擊的防火牆。"}, {"t": "shoulder surfing", "d": "一種社會工程策略,透過觀察某人輸入的密碼或 PIN 來獲取他或她的訊息。"}, {"t": "NFC", "d": "在極短距離內進行點對點無線電通訊的標準,有助於非接觸式支付和類似技術。"}, {"t": "TTP", "d": "分析歷史網路攻擊和對手行動。"}, {"t": "failover", "d": "一種確保冗餘組件、設備或應用程序能夠快速有效地接管故障資產功能的技術。"}, {"t": "FPGA", "d": "一種處理器,可以由客戶而不是在製造時進行編程以執行特定功能。"}, {"t": "LEAP", "d": "Cisco Systems 的專有EAP實施。"}, {"t": "HTML5 VPN", "d": "利用 HTML5 的特性透過瀏覽器軟體(無客戶端)實現遠程桌面/VPN 連接。"}, {"t": "order of volatility", "d": "安全事件後,應從各種存儲位置和設備中恢復易失性數據的順序。"}, {"t": "data sovereignty", "d": "在數據保護方面,原則是國家和州可以對在其管轄範圍內收集或存儲的數據提出個別要求。"}, {"t": "IKE", "d": "用於創建與 IPSec 一起使用的安全關聯(SA)的框架。"}, {"t": "hashcat", "d": "用於對密碼哈希執行暴力破解和字典攻擊的指令行工具。"}, {"t": "fuzzing", "d": "一種動態代碼分析技術,涉及向正在運行的應用程序發送隨機和不尋常的輸入, 以評估應用程序的回應方式。"}, {"t": "data owner", "d": "維護訊息資產的機密性、完整性和可用性負最終責任的執行者角色。"}, {"t": "block cipher", "d": "一種對稱加密,一次加密一個區塊,通常是64位區塊。它通常比流密碼更安全,但也更慢。"}, {"t": "PAT", "d": "將私有主機 IP地址映射到單個公共IP地址。"}, {"t": "replay attack", "d": "攻擊者截獲一些身份驗證數據並重用它以嘗試重新建立會話的攻擊。"}, {"t": "public key", "d": "在非對稱加密過程中,該密鑰是自由分發的。"}, {"t": "hardening", "d": "透過減少其攻擊面,僅運行必要的服務、安裝監控軟體以防止惡意軟體和入侵以及建立維護計劃以確保系統被修補以防止軟體攻擊,從而使主機或應用程序配置安全的過程。"}, {"t": "syslog", "d": "一種協定,使不同的設備和軟體應用程序能夠將日誌或事件記錄傳輸到中央伺服器。"}, {"t": "signature-based detection", "d": "一種網路監控系統,它使用預定義規則來識別不可接受的事件。"}]
+; // [{t: "English Term", d: "Description"}, ...]
+const MINDMAP_VERSION = 'lesson1-v8';
+
+// build a lookup + one big regex, longest terms first so "Access Control" wins over "Access"
+const DICT_LOOKUP = {};
+DICTIONARY.forEach(e => { DICT_LOOKUP[e.t.toLowerCase()] = e.d; });
+function escapeRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+const DICT_TERMS_SORTED = DICTIONARY.map(e => e.t).sort((a, b) => b.length - a.length);
+const DICT_REGEX = DICT_TERMS_SORTED.length
+  ? new RegExp('\\b(' + DICT_TERMS_SORTED.map(escapeRegex).join('|') + ')\\b', 'gi')
+  : null;
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// turn plain content text into HTML with dictionary terms wrapped in highlightable spans
+function highlightDictTerms(text) {
+  if (!text) return '';
+  if (!DICT_REGEX) return escapeHtml(text);
+  DICT_REGEX.lastIndex = 0;
+  let out = '';
+  let lastIndex = 0;
+  let m;
+  while ((m = DICT_REGEX.exec(text)) !== null) {
+    out += escapeHtml(text.slice(lastIndex, m.index));
+    const matched = m[0];
+    const desc = DICT_LOOKUP[matched.toLowerCase()];
+    out += `<span class="dict-term" data-desc="${escapeHtml(desc)}">${escapeHtml(matched)}</span>`;
+    lastIndex = m.index + matched.length;
+  }
+  out += escapeHtml(text.slice(lastIndex));
+  return out;
+}
+
+const SHAPE_OPTIONS = [
+  {en:'ellipse', zh:'橢圓形'}, {en:'triangle', zh:'三角形'}, {en:'round-triangle', zh:'圓角三角形'},
+  {en:'rectangle', zh:'矩形'}, {en:'round-rectangle', zh:'圓角矩形'}, {en:'bottom-round-rectangle', zh:'下圓角矩形'},
+  {en:'cut-rectangle', zh:'切角矩形'}, {en:'barrel', zh:'桶形'}, {en:'rhomboid', zh:'平行四邊形'},
+  {en:'right-rhomboid', zh:'右斜平行四邊形'}, {en:'diamond', zh:'菱形'}, {en:'round-diamond', zh:'圓角菱形'},
+  {en:'pentagon', zh:'五邊形'}, {en:'round-pentagon', zh:'圓角五邊形'}, {en:'hexagon', zh:'六邊形'},
+  {en:'round-hexagon', zh:'圓角六邊形'}, {en:'concave-hexagon', zh:'凹六邊形'}, {en:'heptagon', zh:'七邊形'},
+  {en:'round-heptagon', zh:'圓角七邊形'}, {en:'octagon', zh:'八邊形'}, {en:'round-octagon', zh:'圓角八邊形'},
+  {en:'star', zh:'星形'}, {en:'tag', zh:'標籤形'}, {en:'round-tag', zh:'圓角標籤形'}, {en:'vee', zh:'V字形'}
+];
+
+// snapshot of original values, used to compute the export diff
+const ORIGINAL = {};
+GRAPH_DATA.forEach(n => {
+  ORIGINAL[n.id] = { label: n.label, content: n.content, shape: n.shape, color: n.color, size: n.size, x: n.x, y: n.y };
+});
+const ORIGINAL_EDGES = {}; // populated once edges are created below
+
+let editingMode = false;
+let currentEditId = null;
+let currentEdgeId = null;
+let dragStartPos = null;
+const undoStack = []; // {kind, id, field, oldValue}
+
+function mdTableToHtml(md) {
+  if (!md) return '';
+  const lines = md.trim().split('\n').filter(l => l.includes('|'));
+  if (lines.length < 2) return `<div style="white-space:pre-wrap;font-size:12.5px;color:#d7e4dc;margin-top:8px;">${md}</div>`;
+  let rows = lines.filter((l,i) => !(i===1 && /^[\s|:-]+$/.test(l)));
+  let html = '<table class="mdtable">';
+  rows.forEach((row, i) => {
+    const cells = row.split('|').map(c=>c.trim()).filter((c,idx,arr)=> !(idx===0 && c==='') && !(idx===arr.length-1 && c===''));
+    const tag = i===0 ? 'th' : 'td';
+    html += '<tr>' + cells.map(c=>`<${tag}>${c}</${tag}>`).join('') + '</tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+const EDGE_STYLE_OVERRIDES = {
+  'l1-root__l1-topic1a': { lineColor: '#ffffff', syncColor: false },
+  'l1-root__l1-topic1b': { lineColor: '#ffffff', syncColor: false }
+};
+
+const elements = [];
+GRAPH_DATA.forEach(n => {
+  elements.push({
+    data: { id: n.id, label: n.label, content: n.content, table: n.table, source: n.source, flow: n.flow, size: n.size, color: n.color, shape: n.shape },
+    position: { x: n.x, y: n.y }
+  });
+});
+GRAPH_DATA.forEach(n => {
+  if (n.parent) {
+    const edgeId = n.parent+'__'+n.id;
+    const parentNode = GRAPH_DATA.find(x => x.id === n.parent);
+    let initialColor = parentNode ? parentNode.color : '#8fd39a';
+    let initialSync = true;
+    const override = EDGE_STYLE_OVERRIDES[edgeId];
+    if (override) {
+      if ('lineColor' in override) initialColor = override.lineColor;
+      if ('syncColor' in override) initialSync = override.syncColor;
+    }
+    elements.push({ data: {
+      id: edgeId, source: n.parent, target: n.id, kind: 'hierarchy',
+      curveStyle: 'bezier', lineStyle: 'solid', edgeWidth: 3, lineColor: initialColor, edgeLabel: '', syncColor: initialSync
+    } });
+    ORIGINAL_EDGES[edgeId] = { curveStyle: 'bezier', lineStyle: 'solid', edgeWidth: 3, lineColor: initialColor, edgeLabel: '', syncColor: initialSync };
+  }
+});
+
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: elements,
+  style: [
+    {
+      selector: 'node',
+      style: {
+        'background-color': 'data(color)',
+        'shape': 'data(shape)',
+        'width': 'data(size)',
+        'height': 'data(size)',
+        'label': 'data(label)',
+        'color': '#e7f0ea',
+        'font-size': 9,
+        'line-height': 1.5,
+        'text-valign': 'bottom',
+        'text-margin-y': 8,
+        'text-wrap': 'wrap',
+        'text-max-width': 100,
+        'border-width': 1.5,
+        'border-color': '#0f1512',
+        'text-outline-width': 1,
+        'text-outline-color': '#0f1512'
+      }
+    },
+    {
+      selector: 'edge[kind = "hierarchy"]',
+      style: {
+        'width': 'data(edgeWidth)',
+        'line-color': 'data(lineColor)',
+        'line-style': 'data(lineStyle)',
+        'curve-style': 'data(curveStyle)',
+        'label': 'data(edgeLabel)',
+        'target-arrow-color': 'data(lineColor)',
+        'target-arrow-shape': 'triangle',
+        'arrow-scale': 1,
+        'opacity': 0.95,
+        'font-size': 9,
+        'color': '#e7f0ea',
+        'text-outline-width': 1,
+        'text-outline-color': '#0f1512',
+        'text-background-opacity': 0
+      }
+    },
+    { selector: 'node:selected', style: { 'border-width': 3, 'border-color': '#ffffff' } },
+    { selector: '.dimmed', style: { 'opacity': 0.12 } }
+  ],
+  layout: { name: 'preset' },
+  wheelSensitivity: 0.25
+});
+cy.autoungrabify(true); // view mode default: nodes cannot be dragged
+
+function jumpBtn(target, container, isRelated) {
+  const rn = GRAPH_DATA.find(x => x.id === target.id);
+  const b = document.createElement('button');
+  b.className = 'rel-btn' + (isRelated ? ' related-btn' : '');
+  b.textContent = (isRelated ? '⇄ ' : (target.dir === 'up' ? '↑ ' : '↓ ')) + rn.label.split('\n')[0];
+  b.onclick = () => {
+    cy.elements().unselect();
+    cy.$('#'+rn.id).select();
+    showNode(rn.id);
+    cy.animate({ center: { eles: cy.$('#'+rn.id) }, duration: 250 });
+  };
+  container.appendChild(b);
+}
+
+function showNode(id) {
+  const n = GRAPH_DATA.find(x => x.id === id);
+  if (!n) return;
+  currentEditId = id;
+  currentEdgeId = null;
+  document.getElementById('sidebar').classList.add('visible');
+  document.getElementById('edgeEditPanel').style.display = 'none';
+
+  const node = cy.$('#'+id);
+  const liveLabel = node.data('label');
+  const liveContent = node.data('content');
+
+  document.getElementById('nodeBadge').style.display = 'inline-block';
+  document.getElementById('nodeMeta').style.display = 'block';
+  document.getElementById('tableWrap').style.display = 'block';
+  document.getElementById('nodeBadge').textContent = n.source ? ('來源：' + n.source) : '';
+  document.getElementById('nodeTitle').textContent = liveLabel;
+  document.getElementById('nodeMeta').textContent = n.flow ? ('流程步驟 #' + n.flow) : '';
+  document.getElementById('nodeContent').innerHTML = liveContent ? highlightDictTerms(liveContent) : '（尚無內文）';
+  document.getElementById('tableWrap').innerHTML = mdTableToHtml(n.table);
+
+  document.getElementById('nodeTitle').style.display = editingMode ? 'none' : 'block';
+  document.getElementById('nodeContent').style.display = editingMode ? 'none' : 'block';
+  document.getElementById('editPanel').style.display = editingMode ? 'flex' : 'none';
+
+  if (editingMode) {
+    document.getElementById('editLabel').value = liveLabel;
+    document.getElementById('editContent').value = liveContent;
+    document.getElementById('editColor').value = node.data('color');
+    document.getElementById('editSize').value = node.data('size');
+    const shapeSelect = document.getElementById('editShape');
+    shapeSelect.innerHTML = SHAPE_OPTIONS.map(o => `<option value="${o.en}">${o.zh}</option>`).join('');
+    shapeSelect.value = node.data('shape');
+  }
+
+  const parentSection = document.getElementById('parentSection');
+  const parentBtns = document.getElementById('parentBtns');
+  parentBtns.innerHTML = '';
+  if (n.parent) {
+    parentSection.style.display = 'block';
+    jumpBtn({id: n.parent, dir:'up'}, parentBtns, false);
+  } else { parentSection.style.display = 'none'; }
+
+  const childrenSection = document.getElementById('childrenSection');
+  const childrenBtns = document.getElementById('childrenBtns');
+  childrenBtns.innerHTML = '';
+  if (n.children && n.children.length) {
+    childrenSection.style.display = 'block';
+    n.children.forEach(cid => jumpBtn({id: cid, dir:'down'}, childrenBtns, false));
+  } else { childrenSection.style.display = 'none'; }
+
+  const relSection = document.getElementById('relSection');
+  const relBtns = document.getElementById('relBtns');
+  relBtns.innerHTML = '';
+  if (n.related && n.related.length) {
+    relSection.style.display = 'block';
+    n.related.forEach(rid => jumpBtn({id: rid}, relBtns, true));
+  } else { relSection.style.display = 'none'; }
+}
+
+function showEdge(edgeId) {
+  if (!editingMode) return; // view mode: clicking an edge does nothing (no empty panel)
+  const edge = cy.$('#'+edgeId);
+  if (!edge || edge.empty()) return;
+  currentEdgeId = edgeId;
+  currentEditId = null;
+  document.getElementById('sidebar').classList.add('visible');
+
+  // hide node-only sections
+  ['nodeBadge','nodeTitle','nodeMeta','nodeContent','tableWrap','editPanel','parentSection','childrenSection','relSection']
+    .forEach(elId => { document.getElementById(elId).style.display = 'none'; });
+
+  document.getElementById('edgeEditPanel').style.display = 'flex';
+  document.getElementById('edgeCurveStyle').value = edge.data('curveStyle');
+  document.getElementById('edgeLineStyle').value = edge.data('lineStyle');
+  document.getElementById('edgeWidth').value = edge.data('edgeWidth');
+  document.getElementById('edgeColor').value = edge.data('lineColor');
+  document.getElementById('edgeLabel').value = edge.data('edgeLabel') || '';
+  document.getElementById('edgeSyncColor').checked = !!edge.data('syncColor');
+}
+
+function applyEdgeEdit(edgeId, field, newValue) {
+  const edge = cy.$('#'+edgeId);
+  undoStack.push({ kind: 'edge-style', id: edgeId, field, oldValue: edge.data(field) });
+  edge.data(field, newValue);
+  document.getElementById('exportBtn').disabled = false;
+}
+
+function syncEdgeColorToParent(edgeId) {
+  const edge = cy.$('#'+edgeId);
+  const parentNode = cy.$('#'+edge.data('source'));
+  if (parentNode && !parentNode.empty()) {
+    edge.data('lineColor', parentNode.data('color'));
+  }
+}
+
+document.getElementById('edgeCurveStyle').addEventListener('change', (e) => {
+  if (!currentEdgeId) return;
+  applyEdgeEdit(currentEdgeId, 'curveStyle', e.target.value);
+});
+document.getElementById('edgeLineStyle').addEventListener('change', (e) => {
+  if (!currentEdgeId) return;
+  applyEdgeEdit(currentEdgeId, 'lineStyle', e.target.value);
+});
+document.getElementById('edgeWidth').addEventListener('input', (e) => {
+  if (!currentEdgeId) return;
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v)) applyEdgeEdit(currentEdgeId, 'edgeWidth', v);
+});
+document.getElementById('edgeColor').addEventListener('input', (e) => {
+  if (!currentEdgeId) return;
+  const edge = cy.$('#'+currentEdgeId);
+  if (edge.data('syncColor')) {
+    undoStack.push({ kind: 'edge-style', id: currentEdgeId, field: 'syncColor', oldValue: true });
+    edge.data('syncColor', false);
+    document.getElementById('edgeSyncColor').checked = false;
+  }
+  applyEdgeEdit(currentEdgeId, 'lineColor', e.target.value);
+});
+document.getElementById('edgeLabel').addEventListener('input', (e) => {
+  if (!currentEdgeId) return;
+  applyEdgeEdit(currentEdgeId, 'edgeLabel', e.target.value);
+});
+document.getElementById('edgeSyncColor').addEventListener('change', (e) => {
+  if (!currentEdgeId) return;
+  applyEdgeEdit(currentEdgeId, 'syncColor', e.target.checked);
+  if (e.target.checked) {
+    syncEdgeColorToParent(currentEdgeId);
+    document.getElementById('edgeColor').value = cy.$('#'+currentEdgeId).data('lineColor');
+  }
+});
+
+function applyEdit(id, field, newValue, pushUndo = true) {
+  const node = cy.$('#'+id);
+  if (pushUndo) {
+    undoStack.push({ kind: 'node-data', id, field, oldValue: node.data(field) });
+  }
+  node.data(field, newValue);
+  document.getElementById('exportBtn').disabled = false;
+
+  // propagate color changes to child edges that are still synced
+  if (field === 'color') {
+    cy.edges(`[source = "${id}"]`).forEach(edge => {
+      if (edge.data('syncColor')) {
+        edge.data('lineColor', newValue);
+        if (edge.id() === currentEdgeId) document.getElementById('edgeColor').value = newValue;
+      }
+    });
+  }
+}
+
+document.getElementById('editLabel').addEventListener('input', (e) => {
+  if (!currentEditId) return;
+  applyEdit(currentEditId, 'label', e.target.value);
+  document.getElementById('nodeTitle').textContent = e.target.value;
+});
+document.getElementById('editContent').addEventListener('input', (e) => {
+  if (!currentEditId) return;
+  applyEdit(currentEditId, 'content', e.target.value);
+});
+document.getElementById('editShape').addEventListener('change', (e) => {
+  if (!currentEditId) return;
+  applyEdit(currentEditId, 'shape', e.target.value);
+});
+document.getElementById('editColor').addEventListener('input', (e) => {
+  if (!currentEditId) return;
+  applyEdit(currentEditId, 'color', e.target.value);
+});
+document.getElementById('editSize').addEventListener('input', (e) => {
+  if (!currentEditId) return;
+  const v = parseFloat(e.target.value);
+  if (!isNaN(v)) applyEdit(currentEditId, 'size', v);
+});
+
+document.getElementById('lockBtn').addEventListener('click', () => {
+  editingMode = !editingMode;
+  cy.autoungrabify(!editingMode); // only allow node dragging while editing
+  const btn = document.getElementById('lockBtn');
+  btn.textContent = editingMode ? '🔓' : '🔒';
+  btn.classList.toggle('active', editingMode);
+  document.getElementById('cy').classList.toggle('editing', editingMode);
+  document.getElementById('editBanner').classList.toggle('visible', editingMode);
+  if (currentEditId) showNode(currentEditId);
+  else if (currentEdgeId) showEdge(currentEdgeId);
+});
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const changes = {};
+  cy.nodes().forEach(node => {
+    const id = node.id();
+    const orig = ORIGINAL[id];
+    if (!orig) return;
+    const diff = {};
+    ['label', 'content', 'shape', 'color', 'size'].forEach(field => {
+      const cur = node.data(field);
+      if (cur !== orig[field]) diff[field] = cur;
+    });
+    const pos = node.position();
+    if (Math.round(pos.x*10)/10 !== orig.x || Math.round(pos.y*10)/10 !== orig.y) {
+      diff.x = Math.round(pos.x*10)/10;
+      diff.y = Math.round(pos.y*10)/10;
+    }
+    if (Object.keys(diff).length > 0) changes[id] = diff;
+  });
+
+  const edge_changes = {};
+  cy.edges().forEach(edge => {
+    const id = edge.id();
+    const orig = ORIGINAL_EDGES[id];
+    if (!orig) return;
+    const diff = {};
+    ['curveStyle', 'lineStyle', 'edgeWidth', 'lineColor', 'edgeLabel', 'syncColor'].forEach(field => {
+      const cur = edge.data(field);
+      if (cur !== orig[field]) diff[field] = cur;
+    });
+    if (Object.keys(diff).length > 0) edge_changes[id] = diff;
+  });
+
+  const payload = {
+    version: MINDMAP_VERSION,
+    exported_at: new Date().toISOString(),
+    changes,
+    edge_changes
+  };
+
+  const now = new Date();
+  const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const filename = `mindmap_${MINDMAP_VERSION}_${ts}.json`;
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+window.addEventListener('keydown', (e) => {
+  const isUndo = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z';
+  if (!isUndo || !editingMode) return;
+  e.preventDefault();
+  const action = undoStack.pop();
+  if (!action) return;
+  if (action.kind === 'node-pos') {
+    cy.$('#'+action.id).position(action.oldValue);
+  } else if (action.kind === 'edge-style') {
+    cy.$('#'+action.id).data(action.field, action.oldValue);
+    if (action.id === currentEdgeId) showEdge(action.id);
+  } else {
+    cy.$('#'+action.id).data(action.field, action.oldValue);
+    if (action.id === currentEditId) showNode(action.id);
+  }
+});
+
+cy.on('tap', 'node', (evt) => {
+  cy.elements().unselect();
+  evt.target.select();
+  showNode(evt.target.id());
+});
+
+cy.on('tap', 'edge', (evt) => {
+  if (!editingMode) return;
+  cy.elements().unselect();
+  evt.target.select();
+  showEdge(evt.target.id());
+});
+
+cy.on('tap', (evt) => {
+  if (evt.target === cy) {
+    cy.elements().unselect();
+    document.getElementById('sidebar').classList.remove('visible');
+    currentEditId = null;
+    currentEdgeId = null;
+  }
+});
+
+cy.on('grab', 'node', (evt) => {
+  dragStartPos = { x: evt.target.position('x'), y: evt.target.position('y') };
+});
+cy.on('dragfree', 'node', (evt) => {
+  if (!editingMode || !dragStartPos) return;
+  const node = evt.target;
+  const newPos = node.position();
+  if (newPos.x !== dragStartPos.x || newPos.y !== dragStartPos.y) {
+    undoStack.push({ kind: 'node-pos', id: node.id(), field: 'position', oldValue: { ...dragStartPos } });
+    document.getElementById('exportBtn').disabled = false;
+  }
+  dragStartPos = null;
+});
+
+// smooth WASD panning: hold a key to keep panning every animation frame
+const heldKeys = new Set();
+const PAN_SPEED = 12; // px per frame
+window.addEventListener('keydown', (e) => {
+  if (document.activeElement && document.activeElement.tagName !== 'BODY') return;
+  const key = e.key.toLowerCase();
+  if (['w','a','s','d'].includes(key)) heldKeys.add(key);
+});
+window.addEventListener('keyup', (e) => {
+  heldKeys.delete(e.key.toLowerCase());
+});
+function panLoop() {
+  if (heldKeys.size) {
+    let dx = 0, dy = 0;
+    if (heldKeys.has('w')) dy += PAN_SPEED;
+    if (heldKeys.has('s')) dy -= PAN_SPEED;
+    if (heldKeys.has('a')) dx += PAN_SPEED;
+    if (heldKeys.has('d')) dx -= PAN_SPEED;
+    if (dx !== 0 || dy !== 0) cy.panBy({ x: dx, y: dy });
+  }
+  requestAnimationFrame(panLoop);
+}
+requestAnimationFrame(panLoop);
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  cy.nodes().removeClass('dimmed');
+  if (!q) return;
+  cy.nodes().forEach(node => {
+    const label = (node.data('label') || '').toLowerCase();
+    const content = (node.data('content') || '').toLowerCase();
+    if (!label.includes(q) && !content.includes(q)) node.addClass('dimmed');
+  });
+});
+
+// dictionary term click: show a small popup with the description near the click
+document.getElementById('nodeContent').addEventListener('click', (e) => {
+  const el = e.target.closest('.dict-term');
+  const popup = document.getElementById('dictPopup');
+  if (!el) { popup.style.display = 'none'; return; }
+  e.stopPropagation();
+  popup.textContent = el.dataset.desc;
+  popup.style.display = 'block';
+  // position near the click, keeping the popup on-screen
+  const margin = 10;
+  let left = e.clientX + margin;
+  let top = e.clientY + margin;
+  const maxLeft = window.innerWidth - popup.offsetWidth - margin;
+  const maxTop = window.innerHeight - popup.offsetHeight - margin;
+  popup.style.left = Math.min(left, Math.max(margin, maxLeft)) + 'px';
+  popup.style.top = Math.min(top, Math.max(margin, maxTop)) + 'px';
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.dict-term') && !e.target.closest('#dictPopup')) {
+    document.getElementById('dictPopup').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
